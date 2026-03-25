@@ -4,6 +4,7 @@ import {
   Search, Building2, MapPin, Info, CheckCircle2, Clock, AlertCircle
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { fetchJson } from '../services/apiService';
 
 interface MilestoneData {
   investorDate?: string;
@@ -67,8 +68,7 @@ export default function GanttDashboardNOXH({ reportDate, projectStatuses, projec
   const [stageFilter, setStageFilter] = useState('Tất cả giai đoạn');
 
   useEffect(() => {
-    fetch('/api/v1/projects')
-      .then(res => res.json())
+    fetchJson('/api/v1/projects')
       .then(data => {
         // Mocking additional data for Gantt view if not present
         const enrichedData = data.map((p: any, pIdx: number) => {

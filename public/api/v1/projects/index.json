@@ -1,0 +1,40 @@
+[
+  {
+    "id": "1",
+    "code": "NOXH-HCM-01",
+    "name": "Nhà ở xã hội tại số 04 Phan Chu Trinh, Phường 12, quận Bình Thạnh",
+    "investor": "Ban Quản lý dự án đầu tư xây dựng các công trình dân dụng và công nghiệp",
+    "location": "Phường Bình Thạnh, TP.HCM",
+    "totalArea": 1.21,
+    "height": 20,
+    "apartmentCount": 864,
+    "progress": 85,
+    "status": "On Track",
+    "currentStep": "Thi công xây dựng",
+    "currentAgency": "Sở Xây dựng",
+    "deadline": "2027-04-30",
+    "stage": "Thực hiện đầu tư",
+    "isKeyProject": true,
+    "isPublicInvestment": true,
+    "fundingSource": "Vốn ngân sách"
+  },
+  {
+    "id": "2",
+    "code": "NOXH-HCM-02",
+    "name": "Dự án Nhà ở xã hội Khải Vy, số 4 Đào Trí, P Phú Thuận, Quận 7",
+    "investor": "Công ty CP Tập đoàn Khải Thịnh",
+    "location": "Phường Phú Thuận, TP.HCM",
+    "totalArea": 0.26,
+    "height": 22,
+    "apartmentCount": 324,
+    "progress": 40,
+    "status": "On Track",
+    "currentStep": "Thi công xây dựng",
+    "currentAgency": "Sở Quy hoạch Kiến trúc",
+    "deadline": "2027-12-31",
+    "stage": "Thực hiện đầu tư",
+    "isKeyProject": true,
+    "isPublicInvestment": false,
+    "fundingSource": "Vốn doanh nghiệp"
+  }
+]

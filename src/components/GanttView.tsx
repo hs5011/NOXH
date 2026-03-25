@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { fetchJson } from '../services/apiService';
 
 export default function GanttView() {
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/v1/projects')
-      .then(res => res.json())
+    fetchJson('/api/v1/projects')
       .then(data => {
         setProjects(data);
         setLoading(false);

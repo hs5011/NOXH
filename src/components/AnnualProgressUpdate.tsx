@@ -7,6 +7,7 @@ import {
   Paperclip, Upload, Trash2, File
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { fetchJson } from '../services/apiService';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { format, parse, isValid } from 'date-fns';
@@ -76,8 +77,7 @@ export default function AnnualProgressUpdate({ reportDate, setReportDate }: Annu
   const fetchProjects = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/v1/projects');
-      const data = await res.json();
+      const data = await fetchJson('/api/v1/projects');
       setProjects(data);
     } catch (error) {
       console.error('Error fetching projects:', error);

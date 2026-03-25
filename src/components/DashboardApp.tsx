@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { PROJECT_REGIONS } from '../constants';
+import { fetchJson } from '../services/apiService';
 
 // --- Types ---
 interface Agency {
@@ -55,6 +56,7 @@ export default function DashboardApp({ processingAgencies = [] }: DashboardAppPr
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Summary Stats
   const totalProjects = projects.length;
@@ -62,10 +64,13 @@ export default function DashboardApp({ processingAgencies = [] }: DashboardAppPr
   const onTimeProjects = totalProjects - overdueProjects;
 
   useEffect(() => {
-    fetch('/api/v1/projects')
-      .then(res => res.json())
+    fetchJson('/api/v1/projects')
       .then(data => {
         setProjects(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(err.message);
         setLoading(false);
       });
   }, []);

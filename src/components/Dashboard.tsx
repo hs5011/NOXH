@@ -6,6 +6,7 @@ import {
 import { motion } from 'motion/react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { PROJECT_STAGES, PROJECT_REGIONS } from '../constants';
+import { fetchJson } from '../services/apiService';
 
 const StatCard = ({ label, value, icon: Icon, color }: any) => (
   <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
@@ -23,8 +24,7 @@ export default function DashboardView({ onCreateClick, onNavigateToProjects, pro
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/v1/projects')
-      .then(res => res.json())
+    fetchJson('/api/v1/projects')
       .then(data => {
         setProjects(data);
         setLoading(false);

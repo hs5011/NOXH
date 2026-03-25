@@ -4,6 +4,7 @@ import {
   ChevronDown, Search, ArrowRight, Info
 } from 'lucide-react';
 import { PROJECT_STEPS_DTC, PROJECT_STEPS_DN } from '../constants';
+import { fetchJson } from '../services/apiService';
 
 interface Project {
   id: string;
@@ -22,8 +23,7 @@ export default function ProcessGanttView() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/v1/projects')
-      .then(res => res.json())
+    fetchJson('/api/v1/projects')
       .then(data => {
         setProjects(data);
         setLoading(false);

@@ -8,6 +8,7 @@ import {
 import { Agency } from './AgencyManagement';
 
 import { Process } from './StepManagementView';
+import { fetchJson } from '../services/apiService';
 
 interface ProjectListProps {
   onProjectClick?: (project: any) => void;
@@ -61,8 +62,7 @@ export default function ProjectList({
   const [followerFilter, setFollowerFilter] = useState('');
 
   useEffect(() => {
-    fetch('/api/v1/projects')
-      .then(res => res.json())
+    fetchJson('/api/v1/projects')
       .then(data => {
         let filtered = data;
         if (filter) {
@@ -81,6 +81,10 @@ export default function ProjectList({
           }
         }
         setProjects(filtered);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('ProjectList fetch error:', err);
         setLoading(false);
       });
   }, [filter]);

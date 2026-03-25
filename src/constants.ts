@@ -1,5 +1,8 @@
 import { Project, AgencyStats, WorkflowStep } from './types';
 
+const rawApiBase = import.meta.env.VITE_API_BASE_URL ?? import.meta.env.BASE_URL ?? '';
+export const API_BASE_URL = rawApiBase.replace(/\/$/, '');
+
 export const PROJECT_STAGES = ['Chuẩn bị đầu tư', 'Thực hiện đầu tư', 'Kết thúc đầu tư', 'Hoàn thành'];
 export const PROJECT_STEPS_DTC = [
   'Chấp thuận chủ trương đầu tư',
