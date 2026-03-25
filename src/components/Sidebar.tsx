@@ -13,24 +13,25 @@ const menuItems = [
   { group: 'ĐIỀU HÀNH', items: [
     { id: 'dashboard', name: 'Tổng quan', icon: LayoutDashboard },
     { id: 'dashboard-app', name: 'Dashboard app', icon: LayoutDashboard },
-    { id: 'gis', name: 'Bản đồ GIS', icon: Search },
+    //{ id: 'gis', name: 'Bản đồ GIS', icon: Search },
   ]},
   { group: 'QUẢN LÝ TIẾN ĐỘ DA HIỆN TẠI', items: [
     { id: 'gantt-dashboard-noxh', name: 'Sơ đồ Gantt dự án NOXH', icon: BarChart3 },
     { id: 'annual-update', name: 'Cập nhật tiến độ năm', icon: Clock },
-    { id: 'agency-project-stats', name: 'Thống kê DA theo cơ quan', icon: BarChart3 },
+    { id: 'agency-project-stats', name: 'Thống kê theo cơ quan', icon: BarChart3 },
   ]},
   { group: 'QUẢN LÝ', items: [
     { id: 'projects', name: 'Danh sách dự án', icon: Building2 },
-    { id: 'gantt', name: 'Sơ đồ Gantt dự án', icon: BarChart3 },
+    //{ id: 'gantt', name: 'Sơ đồ Gantt dự án', icon: BarChart3 },
     { id: 'process-gantt', name: 'Sơ đồ Gantt quy trình', icon: GitBranch },
   ]},
-  { group: 'NGHIỆP VỤ', items: [
+  /*{ group: 'NGHIỆP VỤ', items: [
     { id: 'tasks', name: 'Hồ sơ chờ xử lý', icon: GitBranch, badge: 5 },
     { id: 'documents', name: 'Kho hồ sơ số', icon: FileText },
-  ]},
+  ]},*/
   { group: 'HỆ THỐNG', items: [
-    { id: 'kpi', name: 'Báo cáo KPI', icon: BarChart3 },
+     { id: 'step-management', name: 'Danh mục quy trình', icon: Layers },
+    //{ id: 'kpi', name: 'Báo cáo KPI', icon: BarChart3 },
     { id: 'investor-management', name: 'Danh mục CĐT', icon: Building2 },
     { id: 'project-group-management', name: 'Nhóm dự án', icon: Building2 },
     { id: 'project-status-management', name: 'Trạng thái dự án', icon: Settings },
@@ -40,7 +41,7 @@ const menuItems = [
     { id: 'step-status-management', name: 'Trạng thái bước', icon: Settings },
     { id: 'priority-management', name: 'Mức độ ưu tiên', icon: Settings },
     { id: 'result-management', name: 'Kết quả xử lý', icon: Settings },
-    { id: 'step-management', name: 'Danh mục quy trình', icon: Layers },
+   
     { id: 'follower-management', name: 'Danh mục người theo dõi', icon: User },
     { id: 'location-management', name: 'Danh mục Địa điểm', icon: Search },
     { id: 'settings', name: 'Cấu hình', icon: Settings },
