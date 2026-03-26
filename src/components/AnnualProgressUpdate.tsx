@@ -7,7 +7,6 @@ import {
   Paperclip, Upload, Trash2, File
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { fetchJson } from '../services/apiService';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { format, parse, isValid } from 'date-fns';
@@ -50,13 +49,14 @@ interface Project {
 }
 
 interface AnnualProgressUpdateProps {
+  projects?: Project[];
   reportDate: string;
   setReportDate: (date: string) => void;
 }
 
-export default function AnnualProgressUpdate({ reportDate, setReportDate }: AnnualProgressUpdateProps) {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function AnnualProgressUpdate({ projects: initialProjects = [], reportDate, setReportDate }: AnnualProgressUpdateProps) {
+  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -71,41 +71,21 @@ export default function AnnualProgressUpdate({ reportDate, setReportDate }: Annu
   const itemsPerPage = 10;
 
   useEffect(() => {
-    fetchProjects();
-  }, []);
-
-  const fetchProjects = async () => {
-    setLoading(true);
-    try {
-      const data = await fetchJson('/api/v1/projects');
-      setProjects(data);
-    } catch (error) {
-      console.error('Error fetching projects:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    setProjects(initialProjects);
+  }, [initialProjects]);
 
   const handleSave = async (project: Project) => {
     setIsSaving(true);
-    try {
-      const res = await fetch(`/api/v1/projects/${project.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(project),
-      });
-      if (res.ok) {
-        setProjects(prev => prev.map(p => p.id === project.id ? project : p));
-        setEditingProject(null);
-        setShowSuccess(true);
-        setTimeout(() => setShowSuccess(false), 3000);
-      }
-    } catch (error) {
-      console.error('Error saving project:', error);
-    } finally {
-      setIsSaving(false);
-    }
+    // Simulate delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    setProjects(prev => prev.map(p => p.id === project.id ? project : p));
+    setEditingProject(null);
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000);
+    setIsSaving(false);
   };
+
 
   const handleSort = (key: keyof Project) => {
     let direction: 'asc' | 'desc' = 'asc';

@@ -13,7 +13,6 @@ const menuItems = [
   { group: 'ĐIỀU HÀNH', items: [
     { id: 'dashboard', name: 'Tổng quan', icon: LayoutDashboard },
     { id: 'dashboard-app', name: 'Dashboard app', icon: LayoutDashboard },
-    //{ id: 'gis', name: 'Bản đồ GIS', icon: Search },
   ]},
   { group: 'QUẢN LÝ TIẾN ĐỘ DA HIỆN TẠI', items: [
     { id: 'gantt-dashboard-noxh', name: 'Sơ đồ Gantt dự án NOXH', icon: BarChart3 },
@@ -22,16 +21,10 @@ const menuItems = [
   ]},
   { group: 'QUẢN LÝ', items: [
     { id: 'projects', name: 'Danh sách dự án', icon: Building2 },
-    //{ id: 'gantt', name: 'Sơ đồ Gantt dự án', icon: BarChart3 },
     { id: 'process-gantt', name: 'Sơ đồ Gantt quy trình', icon: GitBranch },
   ]},
-  /*{ group: 'NGHIỆP VỤ', items: [
-    { id: 'tasks', name: 'Hồ sơ chờ xử lý', icon: GitBranch, badge: 5 },
-    { id: 'documents', name: 'Kho hồ sơ số', icon: FileText },
-  ]},*/
   { group: 'HỆ THỐNG', items: [
-     { id: 'step-management', name: 'Danh mục quy trình', icon: Layers },
-    //{ id: 'kpi', name: 'Báo cáo KPI', icon: BarChart3 },
+    { id: 'step-management', name: 'Danh mục quy trình', icon: Layers },
     { id: 'investor-management', name: 'Danh mục CĐT', icon: Building2 },
     { id: 'project-group-management', name: 'Nhóm dự án', icon: Building2 },
     { id: 'project-status-management', name: 'Trạng thái dự án', icon: Settings },
@@ -40,11 +33,10 @@ const menuItems = [
     { id: 'funding-source-management', name: 'Nguồn vốn', icon: Building2 },
     { id: 'step-status-management', name: 'Trạng thái bước', icon: Settings },
     { id: 'priority-management', name: 'Mức độ ưu tiên', icon: Settings },
-    { id: 'result-management', name: 'Kết quả xử lý', icon: Settings },
-   
+    { id: 'result-management', name: 'Kết quả xử lý', icon: Settings },    
     { id: 'follower-management', name: 'Danh mục người theo dõi', icon: User },
     { id: 'location-management', name: 'Danh mục Địa điểm', icon: Search },
-    { id: 'settings', name: 'Cấu hình', icon: Settings },
+    
   ]}
 ];
 
@@ -82,11 +74,6 @@ export default function Sidebar({ activeTab, onNavigate }: SidebarProps) {
                     <item.icon size={18} className={activeTab === item.id ? 'text-white' : 'text-slate-500 group-hover:text-blue-400'} />
                     <span className="text-base font-medium">{item.name}</span>
                   </div>
-                  {item.badge && (
-                    <span className="bg-red-500 text-white text-sm font-bold px-1.5 py-0.5 rounded-full">
-                      {item.badge}
-                    </span>
-                  )}
                 </button>
               ))}
             </div>

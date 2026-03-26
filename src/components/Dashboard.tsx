@@ -6,7 +6,6 @@ import {
 import { motion } from 'motion/react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { PROJECT_STAGES, PROJECT_REGIONS } from '../constants';
-import { fetchJson } from '../services/apiService';
 
 const StatCard = ({ label, value, icon: Icon, color }: any) => (
   <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
@@ -18,22 +17,15 @@ const StatCard = ({ label, value, icon: Icon, color }: any) => (
   </div>
 );
 
-export default function DashboardView({ onCreateClick, onNavigateToProjects, processingAgencies = [] }: any) {
+export default function DashboardView({ projects: initialProjects = [], onCreateClick, onNavigateToProjects, processingAgencies = [], projectStages = [] }: any) {
   const [hoveredStep, setHoveredStep] = useState<{step: number, project: number, info: string} | null>(null);
-  const [projects, setProjects] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [projects, setProjects] = useState<any[]>(initialProjects);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchJson('/api/v1/projects')
-      .then(data => {
-        setProjects(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error("Failed to fetch projects", err);
-        setLoading(false);
-      });
-  }, []);
+    setProjects(initialProjects);
+  }, [initialProjects]);
+
 
   if (loading) {
     return <div className="p-8 text-slate-500">Đang tải dữ liệu...</div>;
@@ -41,27 +33,38 @@ export default function DashboardView({ onCreateClick, onNavigateToProjects, pro
 
   // Calculate KPIs
   const totalProjects = projects.length;
-  const chuanBiDauTu = projects.filter(p => p.stage === 'Chuẩn bị đầu tư').length;
-  const thucHienDauTu = projects.filter(p => p.stage === 'Thực hiện đầu tư').length;
-  const ketThucDauTu = projects.filter(p => p.stage === 'Kết thúc đầu tư').length;
-  const hoanThanh = projects.filter(p => p.stage === 'Hoàn thành').length;
   const treHan = projects.filter(p => p.status === 'Delayed' || p.status === 'Warning').length;
+
+  const dynamicKpis = projectStages.map((stage: string, index: number) => {
+    const count = projects.filter(p => p.stage === stage).length;
+    const colors = [
+      { bg: 'bg-amber-50', text: 'text-amber-600' },
+      { bg: 'bg-indigo-50', text: 'text-indigo-600' },
+      { bg: 'bg-emerald-50', text: 'text-emerald-600' },
+      { bg: 'bg-sky-50', text: 'text-sky-600' },
+      { bg: 'bg-purple-50', text: 'text-purple-600' },
+      { bg: 'bg-pink-50', text: 'text-pink-600' },
+    ];
+    // Use different icons based on index for variety
+    const icons = [Clock, TrendingUp, CheckCircle2, Building2];
+    return {
+      label: stage,
+      value: count,
+      icon: icons[index % icons.length],
+      color: colors[index % colors.length]
+    };
+  });
 
   const kpis = [
     { label: 'Tổng số dự án', value: totalProjects, icon: Building2, color: { bg: 'bg-blue-50', text: 'text-blue-600' } },
-    { label: 'Chuẩn bị đầu tư', value: chuanBiDauTu, icon: Clock, color: { bg: 'bg-amber-50', text: 'text-amber-600' } },
-    { label: 'Thực hiện đầu tư', value: thucHienDauTu, icon: TrendingUp, color: { bg: 'bg-indigo-50', text: 'text-indigo-600' } },
-    { label: 'Kết thúc đầu tư', value: ketThucDauTu, icon: CheckCircle2, color: { bg: 'bg-emerald-50', text: 'text-emerald-600' } },
-    { label: 'Hoàn thành', value: hoanThanh, icon: CheckCircle2, color: { bg: 'bg-sky-50', text: 'text-sky-600' } },
-    { label: 'Trễ hạn', value: treHan, icon: AlertCircle, color: { bg: 'bg-rose-50', text: 'text-rose-600' } },
+    ...dynamicKpis,
+    { label: 'Quá hạn', value: treHan, icon: AlertCircle, color: { bg: 'bg-rose-50', text: 'text-rose-600' } },
   ];
 
-  const stageData = [
-    { name: 'Chuẩn bị', value: chuanBiDauTu },
-    { name: 'Thực hiện', value: thucHienDauTu },
-    { name: 'Kết thúc', value: ketThucDauTu },
-    { name: 'Hoàn thành', value: hoanThanh },
-  ].filter(d => d.value > 0);
+  const stageData = projectStages.map((stage: string) => ({
+    name: stage,
+    value: projects.filter(p => p.stage === stage).length
+  })).filter((d: any) => d.value > 0);
   
   const COLORS = ['#f59e0b', '#4f46e5', '#10b981', '#0ea5e9'];
 
@@ -93,7 +96,7 @@ export default function DashboardView({ onCreateClick, onNavigateToProjects, pro
   const choUBND = projects.filter(p => p.currentAgency && p.currentAgency.includes('UBND')).length;
 
   const alerts = [
-    { label: 'Dự án trễ hạn', count: treHan },
+    { label: 'Dự án quá hạn', count: treHan },
     { label: 'Hồ sơ thiếu', count: hoSoThieu },
     { label: 'Dự án chờ ý kiến UBND', count: choUBND },
   ];
@@ -110,7 +113,7 @@ export default function DashboardView({ onCreateClick, onNavigateToProjects, pro
   };
 
   const handleAlertAction = (alertLabel: string) => {
-    if (alertLabel === 'Dự án trễ hạn') {
+    if (alertLabel === 'Dự án quá hạn') {
       onNavigateToProjects({ alert: 'Delayed' });
     }
   };
@@ -187,7 +190,7 @@ export default function DashboardView({ onCreateClick, onNavigateToProjects, pro
                   <td className="py-4 text-base">{p.progress}%</td>
                   <td className="py-4">
                     <span className={`px-2 py-1 rounded-lg text-sm font-bold uppercase ${p.status === 'Delayed' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>
-                      {p.status === 'Delayed' ? 'Trễ hạn' : 'Cảnh báo'}
+                      {p.status === 'Delayed' ? 'Quá hạn' : 'Cảnh báo'}
                     </span>
                   </td>
                 </tr>
@@ -225,7 +228,7 @@ export default function DashboardView({ onCreateClick, onNavigateToProjects, pro
                         const progressStep = Math.floor((p.progress / 100) * 15);
                         if (step < progressStep) color = 'bg-emerald-600'; // hoàn thành
                         else if (step === progressStep) {
-                          color = p.status === 'Delayed' ? 'bg-rose-500' : 'bg-blue-500'; // đang xử lý hoặc trễ
+                          color = p.status === 'Delayed' ? 'bg-rose-500' : 'bg-blue-500'; // đang xử lý hoặc quá hạn
                         }
                         
                         const stepNames = ['Quy hoạch', 'Giao đất', 'PCCC', 'GPXD', 'Thi công', 'Nghiệm thu', 'Bàn giao', 'Vận hành', 'Bảo trì', 'Kiểm toán', 'Quyết toán', 'Pháp lý', 'Tài chính', 'Nhân sự', 'Hoàn tất'];

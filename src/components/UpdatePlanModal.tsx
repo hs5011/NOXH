@@ -11,7 +11,7 @@ interface UpdatePlanModalProps {
   project: any;
   processes: Process[];
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (updatedProject: any) => void;
 }
 
 export default function UpdatePlanModal({ project, processes, onClose, onSuccess }: UpdatePlanModalProps) {
@@ -32,25 +32,18 @@ export default function UpdatePlanModal({ project, processes, onClose, onSuccess
 
   const handleSave = async () => {
     setSubmitting(true);
-    try {
-      const res = await fetch(`/api/v1/projects/${project.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...project,
-          milestones
-        })
-      });
+    // Simulate delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const updatedProject = {
+      ...project,
+      milestones
+    };
 
-      if (res.ok) {
-        onSuccess();
-      }
-    } catch (error) {
-      console.error('Error updating plan:', error);
-    } finally {
-      setSubmitting(false);
-    }
+    setSubmitting(false);
+    onSuccess(updatedProject);
   };
+
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto">

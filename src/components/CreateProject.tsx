@@ -17,7 +17,7 @@ interface Location {
 
 interface CreateProjectProps {
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (project?: any) => void;
   project?: any;
   investors: string[];
   locations: Location[];
@@ -190,34 +190,24 @@ export default function CreateProject({
     
     const { progress, currentStep, status, currentAgency } = calculateProjectStatus(formData.milestones, formData.processId);
 
-    try {
-      const url = isEdit ? `/api/v1/projects/${project.id}` : '/api/v1/projects';
-      const method = isEdit ? 'PUT' : 'POST';
-      
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...project,
-          ...formData,
-          files,
-          progress,
-          status,
-          currentStep,
-          currentAgency,
-          deadline: formData.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-        })
-      });
+    // Simulate delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const updatedProject = {
+      ...project,
+      ...formData,
+      files,
+      progress,
+      status,
+      currentStep,
+      currentAgency,
+      deadline: formData.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    };
 
-      if (res.ok) {
-        onSuccess();
-      }
-    } catch (error) {
-      console.error('Error saving project:', error);
-    } finally {
-      setSubmitting(false);
-    }
+    setSubmitting(false);
+    onSuccess(updatedProject);
   };
+
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto">

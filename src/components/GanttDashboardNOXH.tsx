@@ -4,7 +4,6 @@ import {
   Search, Building2, MapPin, Info, CheckCircle2, Clock, AlertCircle
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { fetchJson } from '../services/apiService';
 
 interface MilestoneData {
   investorDate?: string;
@@ -37,6 +36,7 @@ interface Project {
 }
 
 interface GanttDashboardNOXHProps {
+  projects?: Project[];
   reportDate: string;
   projectStatuses: string[];
   projectStages: string[];
@@ -60,51 +60,48 @@ const formatDisplayDate = (dateStr: string | undefined): string => {
   return `${parts[2]}/${parts[1]}/${parts[0]}`;
 };
 
-export default function GanttDashboardNOXH({ reportDate, projectStatuses, projectStages }: GanttDashboardNOXHProps) {
+export default function GanttDashboardNOXH({ projects: initialProjects = [], reportDate, projectStatuses, projectStages }: GanttDashboardNOXHProps) {
   const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('Tất cả trạng thái');
   const [stageFilter, setStageFilter] = useState('Tất cả giai đoạn');
 
   useEffect(() => {
-    fetchJson('/api/v1/projects')
-      .then(data => {
-        // Mocking additional data for Gantt view if not present
-        const enrichedData = data.map((p: any, pIdx: number) => {
-          const details: { [key: string]: MilestoneData } = {};
-          
-          MILESTONES.forEach((m, mIdx) => {
-            // Logic to create some realistic looking data
-            const isPast = mIdx < (pIdx % 3 + 1);
-            const isCurrent = mIdx === (pIdx % 3 + 1);
-            
-            details[m] = {
-              investorDate: isPast ? '23/10/25' : isCurrent ? '24/02/26' : '',
-              investorStatus: isPast ? 'done' : isCurrent ? 'doing' : 'pending',
-              agencyDate: isPast ? '22/05/29' : isCurrent ? '18/03/26' : '',
-              agencyStatus: isPast ? (mIdx === 0 && pIdx === 0 ? 'delayed' : 'done') : isCurrent ? 'doing' : 'pending'
-            };
-          });
-
-          return {
-            ...p,
-            area: p.area || `${(Math.random() * 3 + 0.5).toFixed(2)} ha`,
-            height: p.height || `${Math.floor(Math.random() * 20) + 25} tầng`,
-            units: p.units || `${Math.floor(Math.random() * 2000) + 500} căn`,
-            startDate: p.startDate || '23/10/2025',
-            endDate: p.endDate || '31/12/2027',
-            textProgress: p.id === '1' ? 'Thô đến tầng 8' : p.id === '2' ? 'Thô đến tầng 5' : p.id === '3' ? 'Hoàn thành' : 'Đang triển khai',
-            milestoneDetails: details,
-            // Map status for filtering
-            status: p.status === 'Delayed' ? 'Trễ' : 'Đúng tiến độ',
-            stage: p.stage || 'Chuẩn bị đầu tư'
-          };
-        });
-        setProjects(enrichedData);
-        setLoading(false);
+    // Mocking additional data for Gantt view if not present
+    const enrichedData = initialProjects.map((p: any, pIdx: number) => {
+      const details: { [key: string]: MilestoneData } = {};
+      
+      MILESTONES.forEach((m, mIdx) => {
+        // Logic to create some realistic looking data
+        const isPast = mIdx < (pIdx % 3 + 1);
+        const isCurrent = mIdx === (pIdx % 3 + 1);
+        
+        details[m] = {
+          investorDate: isPast ? '23/10/25' : isCurrent ? '24/02/26' : '',
+          investorStatus: isPast ? 'done' : isCurrent ? 'doing' : 'pending',
+          agencyDate: isPast ? '22/05/29' : isCurrent ? '18/03/26' : '',
+          agencyStatus: isPast ? (mIdx === 0 && pIdx === 0 ? 'delayed' : 'done') : isCurrent ? 'doing' : 'pending'
+        };
       });
-  }, []);
+
+      return {
+        ...p,
+        area: p.area || `${(Math.random() * 3 + 0.5).toFixed(2)} ha`,
+        height: p.height || `${Math.floor(Math.random() * 20) + 25} tầng`,
+        units: p.units || `${Math.floor(Math.random() * 2000) + 500} căn`,
+        startDate: p.startDate || '23/10/2025',
+        endDate: p.endDate || '31/12/2027',
+        textProgress: p.id === '1' ? 'Thô đến tầng 8' : p.id === '2' ? 'Thô đến tầng 5' : p.id === '3' ? 'Hoàn thành' : 'Đang triển khai',
+        milestoneDetails: details,
+        // Map status for filtering
+        status: p.status === 'Delayed' ? 'Quá hạn' : 'Đúng tiến độ',
+        stage: p.stage || 'Chuẩn bị đầu tư'
+      };
+    });
+    setProjects(enrichedData);
+  }, [initialProjects]);
+
 
   const filteredProjects = projects.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -163,7 +160,7 @@ export default function GanttDashboardNOXH({ reportDate, projectStatuses, projec
     const dataRows = filteredProjects.map((p, idx) => {
       const row = [
         idx + 1,
-        `${p.name}\n(${p.code})\n${p.status === 'Trễ' ? 'Trễ' : 'Đúng tiến độ'}`,
+        `${p.name}\n(${p.code})\n${p.status === 'Quá hạn' ? 'Quá hạn' : 'Đúng tiến độ'}`,
         p.location,
         p.investor,
         p.area,
@@ -241,7 +238,7 @@ export default function GanttDashboardNOXH({ reportDate, projectStatuses, projec
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-900 uppercase tracking-tight">Sơ đồ Gantt dự án NOXH</h2>
-          <p className="text-slate-500 text-sm">Theo dõi tất cả cả dự án, xác định dự án đang ở giai đoạn nào, bước nào, trễ hay đã hoàn thành.</p>
+          <p className="text-slate-500 text-sm">Theo dõi tất cả cả dự án, xác định dự án đang ở giai đoạn nào, bước nào, quá hạn hay đã hoàn thành.</p>
         </div>
         <div className="flex items-center gap-3">
           <button 
@@ -301,7 +298,7 @@ export default function GanttDashboardNOXH({ reportDate, projectStatuses, projec
         {[
           { label: 'Tổng số dự án', value: projects.length, icon: Building2, color: 'blue' },
           { label: 'Đúng tiến độ', value: projects.filter(p => p.status !== 'Trễ').length, icon: CheckCircle2, color: 'emerald' },
-          { label: 'Chậm tiến độ', value: projects.filter(p => p.status === 'Trễ').length, icon: AlertCircle, color: 'rose' },
+          { label: 'Chậm tiến độ', value: projects.filter(p => p.status === 'Quá hạn').length, icon: AlertCircle, color: 'rose' },
           { label: 'Giai đoạn chuẩn bị', value: projects.filter(p => p.stage === 'Chuẩn bị đầu tư').length, icon: Clock, color: 'amber' },
         ].map((stat, idx) => (
           <div key={idx} className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex items-center gap-4">
@@ -328,7 +325,7 @@ export default function GanttDashboardNOXH({ reportDate, projectStatuses, projec
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded-lg bg-rose-500" />
-          <span>Bị trễ</span>
+          <span>Quá hạn</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded-lg bg-slate-100" />
@@ -373,7 +370,7 @@ export default function GanttDashboardNOXH({ reportDate, projectStatuses, projec
                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                           p.status === 'Delayed' ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'
                         }`}>
-                          {p.status === 'Delayed' ? 'Trễ' : 'Đúng tiến độ'}
+                          {p.status === 'Delayed' ? 'Quá hạn' : 'Đúng tiến độ'}
                         </span>
                         <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded uppercase">
                           {p.stage}

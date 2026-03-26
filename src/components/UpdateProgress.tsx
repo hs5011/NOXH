@@ -4,7 +4,7 @@ import { X, CheckCircle2, Clock, AlertCircle, Save, Building2 } from 'lucide-rea
 interface UpdateProgressProps {
   project: any;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (updatedProject: any) => void;
 }
 
 export default function UpdateProgress({ project, onClose, onSuccess }: UpdateProgressProps) {
@@ -18,20 +18,23 @@ export default function UpdateProgress({ project, onClose, onSuccess }: UpdatePr
   const handleSave = async () => {
     setSaving(true);
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 500));
     
-    // In a real app, we would send the updated steps to the server
-    // fetch(`/api/v1/projects/${project.id}/steps`, { method: 'PUT', body: JSON.stringify(steps) })
-    
+    const updatedProject = {
+      ...project,
+      processSteps: steps
+    };
+
     setSaving(false);
-    onSuccess();
+    onSuccess(updatedProject);
   };
+
 
   const statusOptions = [
     { value: 'pending', label: 'Chưa bắt đầu', icon: Clock, color: 'text-slate-400', bg: 'bg-slate-50' },
     { value: 'in_progress', label: 'Đang xử lý', icon: Clock, color: 'text-blue-500', bg: 'bg-blue-50' },
     { value: 'completed', label: 'Hoàn tất', icon: CheckCircle2, color: 'text-emerald-500', bg: 'bg-emerald-50' },
-    { value: 'delayed', label: 'Trễ hạn', icon: AlertCircle, color: 'text-rose-500', bg: 'bg-rose-50' },
+    { value: 'delayed', label: 'Quá hạn', icon: AlertCircle, color: 'text-rose-500', bg: 'bg-rose-50' },
   ];
 
   return (

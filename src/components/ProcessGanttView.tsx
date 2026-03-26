@@ -4,7 +4,6 @@ import {
   ChevronDown, Search, ArrowRight, Info
 } from 'lucide-react';
 import { PROJECT_STEPS_DTC, PROJECT_STEPS_DN } from '../constants';
-import { fetchJson } from '../services/apiService';
 
 interface Project {
   id: string;
@@ -18,17 +17,18 @@ interface Project {
   progress: number;
 }
 
-export default function ProcessGanttView() {
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
+interface ProcessGanttViewProps {
+  projects?: Project[];
+}
+
+export default function ProcessGanttView({ projects: initialProjects = [] }: ProcessGanttViewProps) {
+  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchJson('/api/v1/projects')
-      .then(data => {
-        setProjects(data);
-        setLoading(false);
-      });
-  }, []);
+    setProjects(initialProjects);
+  }, [initialProjects]);
+
 
   const getSteps = (isPublic: boolean) => isPublic ? PROJECT_STEPS_DTC : PROJECT_STEPS_DN;
 
@@ -129,7 +129,7 @@ export default function ProcessGanttView() {
                             <span className={`px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold uppercase tracking-widest ${
                               project.status === 'Delayed' || project.status === 'Warning' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'
                             }`}>
-                              {project.status === 'Delayed' || project.status === 'Warning' ? 'Trễ hạn' : 'Đúng tiến độ'}
+                              {project.status === 'Delayed' || project.status === 'Warning' ? 'Quá hạn' : 'Đúng tiến độ'}
                             </span>
                             <span className="text-[10px] font-semibold text-slate-300 uppercase tracking-widest">{project.code}</span>
                           </div>
@@ -170,7 +170,7 @@ export default function ProcessGanttView() {
                                 {status === 'delayed' && (
                                   <div className="flex items-center gap-1 text-[9px] font-bold text-rose-600 uppercase tracking-tighter">
                                     <AlertCircle size={8} />
-                                    <span>Trễ hạn</span>
+                                    <span>Quá hạn</span>
                                   </div>
                                 )}
                               </div>
@@ -216,7 +216,7 @@ export default function ProcessGanttView() {
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-rose-500" />
-              <span className="text-sm font-bold text-slate-600">Trễ hạn</span>
+              <span className="text-sm font-bold text-slate-600">Quá hạn</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-slate-100" />
@@ -232,7 +232,7 @@ export default function ProcessGanttView() {
           </div>
           <div className="flex gap-8">
             <div className="text-center">
-              <p className="text-xs font-black text-rose-500 uppercase tracking-widest mb-1">Trễ hạn</p>
+              <p className="text-xs font-black text-rose-500 uppercase tracking-widest mb-1">Quá hạn</p>
               <p className="text-3xl font-black text-rose-500">{projects.filter(p => p.status === 'Delayed' || p.status === 'Warning').length}</p>
             </div>
             <div className="text-center border-l border-slate-800 pl-8">

@@ -11,6 +11,7 @@ export interface ChildStep {
   id: string;
   name: string;
   agency: string;
+  department?: string;
   slaDays: number;
 }
 
@@ -18,6 +19,7 @@ export interface ParentStep {
   id: string;
   name: string;
   slaDays: number;
+  stage?: string;
   childSteps: ChildStep[];
 }
 
@@ -31,9 +33,10 @@ interface StepManagementViewProps {
   processingAgencies: Agency[];
   processes: Process[];
   setProcesses: React.Dispatch<React.SetStateAction<Process[]>>;
+  projectStages: string[];
 }
 
-export default function StepManagementView({ processingAgencies, processes, setProcesses }: StepManagementViewProps) {
+export default function StepManagementView({ processingAgencies, processes, setProcesses, projectStages }: StepManagementViewProps) {
   const [selectedProcessId, setSelectedProcessId] = useState<string | null>(null);
   const [isProcessModalOpen, setIsProcessModalOpen] = useState(false);
   const [isParentModalOpen, setIsParentModalOpen] = useState(false);
@@ -44,8 +47,8 @@ export default function StepManagementView({ processingAgencies, processes, setP
   const [editingChild, setEditingChild] = useState<{ processId: string, parentId: string, child: ChildStep | null } | null>(null);
 
   const [processFormData, setProcessFormData] = useState({ name: '' });
-  const [parentFormData, setParentFormData] = useState({ name: '', slaDays: '' });
-  const [childFormData, setChildFormData] = useState({ name: '', agency: '', slaDays: '' });
+  const [parentFormData, setParentFormData] = useState({ name: '', slaDays: '', stage: '' });
+  const [childFormData, setChildFormData] = useState({ name: '', agency: '', department: '', slaDays: '' });
 
   const [expandedParentIds, setExpandedParentIds] = useState<string[]>([]);
 
@@ -95,10 +98,10 @@ export default function StepManagementView({ processingAgencies, processes, setP
   const handleOpenParentModal = (processId: string, parent: ParentStep | null = null) => {
     if (parent) {
       setEditingParent({ processId, parent });
-      setParentFormData({ name: parent.name, slaDays: parent.slaDays.toString() });
+      setParentFormData({ name: parent.name, slaDays: parent.slaDays.toString(), stage: parent.stage || '' });
     } else {
       setEditingParent({ processId, parent: null });
-      setParentFormData({ name: '', slaDays: '' });
+      setParentFormData({ name: '', slaDays: '', stage: '' });
     }
     setIsParentModalOpen(true);
   };
@@ -114,6 +117,7 @@ export default function StepManagementView({ processingAgencies, processes, setP
         id: parent?.id || Math.random().toString(36).substr(2, 9),
         name: parentFormData.name,
         slaDays: parseInt(parentFormData.slaDays) || 0,
+        stage: parentFormData.stage,
         childSteps: parent?.childSteps || []
       };
 
@@ -139,10 +143,15 @@ export default function StepManagementView({ processingAgencies, processes, setP
   const handleOpenChildModal = (processId: string, parentId: string, child: ChildStep | null = null) => {
     if (child) {
       setEditingChild({ processId, parentId, child });
-      setChildFormData({ name: child.name, agency: child.agency, slaDays: child.slaDays.toString() });
+      setChildFormData({ 
+        name: child.name, 
+        agency: child.agency, 
+        department: child.department || '',
+        slaDays: child.slaDays.toString() 
+      });
     } else {
       setEditingChild({ processId, parentId, child: null });
-      setChildFormData({ name: '', agency: '', slaDays: '' });
+      setChildFormData({ name: '', agency: '', department: '', slaDays: '' });
     }
     setIsChildModalOpen(true);
   };
@@ -163,6 +172,7 @@ export default function StepManagementView({ processingAgencies, processes, setP
             id: child?.id || Math.random().toString(36).substr(2, 9),
             name: childFormData.name,
             agency: childFormData.agency,
+            department: childFormData.agency === 'Sở Xây dựng' ? childFormData.department : undefined,
             slaDays: parseInt(childFormData.slaDays) || 0
           };
 
@@ -216,105 +226,121 @@ export default function StepManagementView({ processingAgencies, processes, setP
         </div>
 
         <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden divide-y divide-slate-100">
-          {selectedProcess.parentSteps.map((parent) => (
-            <div key={parent.id} className="group">
-              <div className="p-6 flex items-center justify-between hover:bg-slate-50 transition-all">
-                <div className="flex items-center gap-4 flex-1">
-                  <button 
-                    onClick={() => toggleParentExpand(parent.id)}
-                    className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-all"
-                  >
-                    {expandedParentIds.includes(parent.id) ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-                  </button>
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900">{parent.name}</h3>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="text-sm text-slate-400 font-medium flex items-center gap-1">
-                        <Clock size={12} /> {parent.slaDays} ngày thực hiện
-                      </span>
-                      <span className="text-sm text-slate-400 font-medium">
-                        {parent.childSteps.length} bước con
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                  <button 
-                    onClick={() => handleOpenParentModal(selectedProcess.id, parent)}
-                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                  >
-                    <Edit2 size={16} />
-                  </button>
-                  <button 
-                    onClick={() => handleDeleteParent(selectedProcess.id, parent.id)}
-                    className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
+          {Object.entries(
+            selectedProcess.parentSteps.reduce((acc, step) => {
+              const stage = step.stage || 'Chưa phân loại';
+              if (!acc[stage]) acc[stage] = [];
+              acc[stage].push(step);
+              return acc;
+            }, {} as Record<string, ParentStep[]>)
+          ).map(([stage, steps]) => (
+            <div key={stage} className="bg-slate-50/50">
+              <div className="px-6 py-4 bg-slate-100 border-b border-slate-200">
+                <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest">{stage}</h3>
               </div>
-
-              <AnimatePresence>
-                {expandedParentIds.includes(parent.id) && (
-                  <motion.div 
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden bg-slate-50/30"
-                  >
-                    <div className="pl-20 pr-6 pb-6 space-y-3">
-                      <div className="flex items-center justify-between mb-4">
-                        <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest">Danh sách bước con</h4>
+              <div className="divide-y divide-slate-100 bg-white">
+                {steps.map((parent) => (
+                  <div key={parent.id} className="group">
+                    <div className="p-6 flex items-center justify-between hover:bg-slate-50 transition-all">
+                      <div className="flex items-center gap-4 flex-1">
                         <button 
-                          onClick={() => handleOpenChildModal(selectedProcess.id, parent.id)}
-                          className="text-sm font-black text-blue-600 uppercase tracking-widest hover:underline flex items-center gap-1"
+                          onClick={() => toggleParentExpand(parent.id)}
+                          className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 transition-all"
                         >
-                          <Plus size={14} /> Thêm bước con
+                          {expandedParentIds.includes(parent.id) ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                        </button>
+                        <div>
+                          <h3 className="text-lg font-bold text-slate-900">{parent.name}</h3>
+                          <div className="flex items-center gap-3 mt-1">
+                            <span className="text-sm text-slate-400 font-medium flex items-center gap-1">
+                              <Clock size={12} /> {parent.slaDays} ngày thực hiện
+                            </span>
+                            <span className="text-sm text-slate-400 font-medium">
+                              {parent.childSteps.length} bước con
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                        <button 
+                          onClick={() => handleOpenParentModal(selectedProcess.id, parent)}
+                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteParent(selectedProcess.id, parent.id)}
+                          className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all"
+                        >
+                          <Trash2 size={16} />
                         </button>
                       </div>
-                      {parent.childSteps.map((child) => (
-                        <div key={child.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group/sub">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
-                              <GitBranch size={18} />
-                            </div>
-                            <div>
-                              <p className="text-base font-bold text-slate-700">{child.name}</p>
-                              <div className="flex items-center gap-3 mt-1">
-                                <span className="text-sm text-slate-400 font-medium flex items-center gap-1">
-                                  <Building2 size={12} /> {child.agency}
-                                </span>
-                                <span className="text-sm text-slate-400 font-medium flex items-center gap-1">
-                                  <Clock size={12} /> {child.slaDays} ngày
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1 opacity-0 group-hover/sub:opacity-100 transition-all">
-                            <button 
-                              onClick={() => handleOpenChildModal(selectedProcess.id, parent.id, child)}
-                              className="p-1.5 text-slate-400 hover:text-blue-600 transition-all"
-                            >
-                              <Edit2 size={14} />
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteChild(selectedProcess.id, parent.id, child.id)}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 transition-all"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                      {parent.childSteps.length === 0 && (
-                        <div className="py-4 text-center text-slate-400 text-sm italic">
-                          Chưa có bước con nào
-                        </div>
-                      )}
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+
+                    <AnimatePresence>
+                      {expandedParentIds.includes(parent.id) && (
+                        <motion.div 
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden bg-slate-50/30"
+                        >
+                          <div className="pl-20 pr-6 pb-6 space-y-3">
+                            <div className="flex items-center justify-between mb-4">
+                              <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest">Danh sách bước con</h4>
+                              <button 
+                                onClick={() => handleOpenChildModal(selectedProcess.id, parent.id)}
+                                className="text-sm font-black text-blue-600 uppercase tracking-widest hover:underline flex items-center gap-1"
+                              >
+                                <Plus size={14} /> Thêm bước con
+                              </button>
+                            </div>
+                            {parent.childSteps.map((child) => (
+                              <div key={child.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between group/sub">
+                                <div className="flex items-center gap-4">
+                                  <div className="w-10 h-10 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
+                                    <GitBranch size={18} />
+                                  </div>
+                                  <div>
+                                    <p className="text-base font-bold text-slate-700">{child.name}</p>
+                                    <div className="flex items-center gap-3 mt-1">
+                                      <span className="text-sm text-slate-400 font-medium flex items-center gap-1">
+                                        <Building2 size={12} /> {child.agency} {child.department && ` - ${child.department}`}
+                                      </span>
+                                      <span className="text-sm text-slate-400 font-medium flex items-center gap-1">
+                                        <Clock size={12} /> {child.slaDays} ngày
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1 opacity-0 group-hover/sub:opacity-100 transition-all">
+                                  <button 
+                                    onClick={() => handleOpenChildModal(selectedProcess.id, parent.id, child)}
+                                    className="p-1.5 text-slate-400 hover:text-blue-600 transition-all"
+                                  >
+                                    <Edit2 size={14} />
+                                  </button>
+                                  <button 
+                                    onClick={() => handleDeleteChild(selectedProcess.id, parent.id, child.id)}
+                                    className="p-1.5 text-slate-400 hover:text-rose-600 transition-all"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                            {parent.childSteps.length === 0 && (
+                              <div className="py-4 text-center text-slate-400 text-sm italic">
+                                Chưa có bước con nào
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
           {selectedProcess.parentSteps.length === 0 && (
@@ -361,6 +387,19 @@ export default function StepManagementView({ processingAgencies, processes, setP
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-lg font-bold outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 transition-all"
                     />
                   </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-black text-slate-400 uppercase tracking-widest">Giai đoạn</label>
+                    <select 
+                      value={parentFormData.stage}
+                      onChange={e => setParentFormData({...parentFormData, stage: e.target.value})}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-lg font-bold outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 transition-all"
+                    >
+                      <option value="">Chọn giai đoạn...</option>
+                      {projectStages.map(s => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 <div className="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
                   <button onClick={() => setIsParentModalOpen(false)} className="flex-1 py-3 text-lg font-bold text-slate-500 hover:bg-slate-200 rounded-2xl transition-all">
@@ -403,7 +442,7 @@ export default function StepManagementView({ processingAgencies, processes, setP
                     <label className="text-sm font-black text-slate-400 uppercase tracking-widest">Cơ quan xử lý</label>
                     <select 
                       value={childFormData.agency}
-                      onChange={e => setChildFormData({...childFormData, agency: e.target.value})}
+                      onChange={e => setChildFormData({...childFormData, agency: e.target.value, department: ''})}
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-lg font-bold outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 transition-all"
                     >
                       <option value="">Chọn cơ quan...</option>
@@ -412,6 +451,22 @@ export default function StepManagementView({ processingAgencies, processes, setP
                       ))}
                     </select>
                   </div>
+
+                  {childFormData.agency === 'Sở Xây dựng' && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-black text-slate-400 uppercase tracking-widest">Phòng ban xử lý</label>
+                      <select 
+                        value={childFormData.department}
+                        onChange={e => setChildFormData({...childFormData, department: e.target.value})}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-lg font-bold outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 transition-all"
+                      >
+                        <option value="">Chọn phòng ban...</option>
+                        {processingAgencies.find(a => a.name === 'Sở Xây dựng')?.departments?.map(d => (
+                          <option key={d} value={d}>{d}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <label className="text-sm font-black text-slate-400 uppercase tracking-widest">Số ngày thực hiện</label>
                     <input 

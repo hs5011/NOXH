@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Building2, Clock, CheckCircle2, AlertCircle, 
   FileText, MessageSquare, History, Info, 
-  ChevronRight, Upload, Save, Send, AlertTriangle,
+  ChevronRight, ChevronDown, Upload, Save, Send, AlertTriangle,
   User, Calendar, Shield, MapPin, DollarSign,
   FileCheck, FileX, Paperclip, Download, Eye,
   ArrowLeft
@@ -59,6 +59,7 @@ const MOCK_PROJECT: Project = {
   status: 'Đang xử lý',
   completionRate: 35,
   isPublicInvestment: false,
+  processId: 'p2',
   milestones: {
     'ss1': { agency: '2024-02-10' },
     'ss2': { agency: '2024-03-15' },
@@ -78,26 +79,35 @@ const MOCK_PROJECT: Project = {
 interface HousingUpdateViewProps {
   project?: any;
   onBack?: () => void;
+  onSuccess?: (updatedProject: any) => void;
   stepStatuses?: string[];
   priorities?: string[];
   processingResults?: string[];
   processes?: Process[];
+  initialStepId?: string;
+  initialSubStepId?: string;
 }
 
 export default function HousingUpdateView({ 
   project: initialProject, 
   onBack,
+  onSuccess,
   stepStatuses = ['Chưa bắt đầu', 'Đang xử lý', 'Chờ bổ sung hồ sơ', 'Đã trình', 'Đã phê duyệt', 'Hoàn thành', 'Bị trả hồ sơ', 'Tạm dừng'],
   priorities = ['Thấp', 'Trung bình', 'Cao', 'Khẩn cấp'],
   processingResults = ['Chưa có kết quả', 'Chấp thuận', 'Có ý kiến', 'Phê duyệt', 'Không chấp thuận', 'Yêu cầu bổ sung'],
-  processes = []
+  processes = [],
+  initialStepId,
+  initialSubStepId
 }: HousingUpdateViewProps) {
   const [project, setProject] = useState<any>(initialProject || MOCK_PROJECT);
-  const [activeStepId, setActiveStepId] = useState<string>('');
-  const [activeSubStepId, setActiveSubStepId] = useState<string>('');
+  const [activeStepId, setActiveStepId] = useState<string>(initialStepId || '');
+  const [activeSubStepId, setActiveSubStepId] = useState<string>(initialSubStepId || '');
   const [activeTab, setActiveTab] = useState<'overview' | 'docs' | 'history' | 'comments'>('overview');
   const [isSaving, setIsSaving] = useState(false);
-  const [nextStepId, setNextStepId] = useState<string>('');
+  const [nextStepIds, setNextStepIds] = useState<string[]>([]);
+  const [completionDate, setCompletionDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [currentStatus, setCurrentStatus] = useState<string>('Đang xử lý');
+  const [processingContent, setProcessingContent] = useState<string>('');
 
   const selectedProcess = processes.find(p => p.id === project.processId);
   const steps: ExtendedParentStep[] = selectedProcess?.parentSteps || [];
@@ -107,13 +117,43 @@ export default function HousingUpdateView({
       setProject(initialProject);
       const proc = processes.find(p => p.id === initialProject.processId);
       if (proc && proc.parentSteps.length > 0) {
-        setActiveStepId(proc.parentSteps[0].id);
-        if (proc.parentSteps[0].childSteps?.length > 0) {
-          setActiveSubStepId(proc.parentSteps[0].childSteps[0].id);
+        // Use initial IDs if provided, otherwise find first valid
+        if (initialStepId && proc.parentSteps.some(s => s.id === initialStepId)) {
+          setActiveStepId(initialStepId);
+          if (initialSubStepId) {
+            const parent = proc.parentSteps.find(s => s.id === initialStepId);
+            if (parent?.childSteps?.some(cs => cs.id === initialSubStepId)) {
+              setActiveSubStepId(initialSubStepId);
+            } else if (parent?.childSteps?.length > 0) {
+              setActiveSubStepId(parent.childSteps[0].id);
+            }
+          } else {
+            const parent = proc.parentSteps.find(s => s.id === initialStepId);
+            if (parent?.childSteps?.length > 0) {
+              setActiveSubStepId(parent.childSteps[0].id);
+            }
+          }
+        } else {
+          // Fallback to first step if no initial IDs or invalid
+          const isValid = proc.parentSteps.some(s => s.id === activeStepId);
+          if (!activeStepId || !isValid) {
+            setActiveStepId(proc.parentSteps[0].id);
+            if (proc.parentSteps[0].childSteps?.length > 0) {
+              setActiveSubStepId(proc.parentSteps[0].childSteps[0].id);
+            }
+          } else {
+            const currentStep = proc.parentSteps.find(s => s.id === activeStepId);
+            const isSubValid = currentStep?.childSteps?.some(s => s.id === activeSubStepId);
+            if (!activeSubStepId || !isSubValid) {
+              if (currentStep?.childSteps && currentStep.childSteps.length > 0) {
+                setActiveSubStepId(currentStep.childSteps[0].id);
+              }
+            }
+          }
         }
       }
     }
-  }, [initialProject, processes]);
+  }, [initialProject, processes, initialStepId, initialSubStepId]);
 
   useEffect(() => {
     const currentStep = steps.find(s => s.id === activeStepId);
@@ -130,7 +170,17 @@ export default function HousingUpdateView({
 
   // Get all sub-steps for the "Next Step" select
   const allSubSteps = steps.flatMap(s => s.childSteps || []);
-  const nextSubStep = allSubSteps.find(ss => ss.id === nextStepId);
+
+  const addDays = (dateStr: string, days: number) => {
+    if (!dateStr) return '---';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '---';
+    date.setDate(date.getDate() + (days || 0));
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${d}/${m}/${y}`;
+  };
 
   const formatDate = (dateStr: string | undefined) => {
     if (!dateStr || dateStr === 'N/A' || dateStr === '---') return dateStr || '---';
@@ -179,10 +229,48 @@ export default function HousingUpdateView({
 
   const handleSave = () => {
     setIsSaving(true);
+    
+    // Create a deep copy of the project to update
+    const updatedProject = JSON.parse(JSON.stringify(project));
+    
+    // 1. Update current sub-step actual date and status
+    if (!updatedProject.implementationPlan) updatedProject.implementationPlan = {};
+    if (!updatedProject.implementationPlan[activeSubStepId]) updatedProject.implementationPlan[activeSubStepId] = {};
+    updatedProject.implementationPlan[activeSubStepId].agencyActualDate = completionDate;
+    
+    // 2. Update next steps milestones (HXL dự kiến)
+    if (!updatedProject.milestones) updatedProject.milestones = {};
+    nextStepIds.forEach(id => {
+      const step = allSubSteps.find(s => s.id === id);
+      if (step) {
+        if (!updatedProject.milestones[id]) updatedProject.milestones[id] = {};
+        
+        const date = new Date(completionDate);
+        date.setDate(date.getDate() + (step.slaDays || 0));
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        updatedProject.milestones[id].agency = `${y}-${m}-${d}`;
+      }
+    });
+
+    // 3. Update parent step status if needed (simplified logic)
+    if (currentStatus === 'Hoàn thành') {
+      if (!updatedProject.stepStatuses) updatedProject.stepStatuses = {};
+      updatedProject.stepStatuses[activeStepId] = 'Hoàn thành';
+    }
+
     setTimeout(() => {
       setIsSaving(false);
+      setProject(updatedProject);
+      if (onSuccess) {
+        onSuccess(updatedProject);
+      }
       alert('Cập nhật tiến độ thành công!');
-    }, 1000);
+      // Reset form
+      setNextStepIds([]);
+      setProcessingContent('');
+    }, 800);
   };
 
   return (
@@ -215,12 +303,6 @@ export default function HousingUpdateView({
                 <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Quy trình:</p>
                 <p className="text-base font-black text-blue-600 uppercase">{selectedProcess?.name || 'Chưa gán quy trình'}</p>
               </div>
-              <p className="text-sm font-black text-blue-600 uppercase tracking-wider leading-relaxed opacity-80">
-                {project.isPublicInvestment 
-                  ? "DỰ ÁN NHÀ Ở XÃ HỘI DO NHÀ NƯỚC ĐẦU TƯ XÂY DỰNG BẰNG VỐN ĐẦU TƯ CÔNG TRÊN ĐỊA BÀN THÀNH PHỐ"
-                  : "DỰ ÁN ĐẦU TƯ XÂY DỰNG NHÀ Ở XÃ HỘI KHÔNG SỬ DỤNG VỐN ĐẦU TƯ CÔNG, NGUỒN TÀI CHÍNH CÔNG ĐOÀN TRÊN ĐỊA BÀN THÀNH PHỐ"
-                }
-              </p>
             </div>
 
             <div className="flex items-center gap-4 text-slate-500 text-lg">
@@ -240,13 +322,13 @@ export default function HousingUpdateView({
       </div>
 
       {/* B. VÙNG CẬP NHẬT TIẾN ĐỘ BƯỚC */}
-      <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm flex flex-col">
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg ${getStatusColor('Đang xử lý')}`}>
+      <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm flex flex-col overflow-hidden">
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg bg-blue-600">
               <FileText size={24} />
             </div>
-            <div>
+            <div className="flex flex-col">
               <h3 className="text-2xl font-black text-slate-900 leading-tight">Cập nhật tiến độ bước</h3>
               <p className="text-sm text-slate-400 font-bold uppercase tracking-widest">{activeStep?.name}</p>
             </div>
@@ -267,94 +349,206 @@ export default function HousingUpdateView({
           </div>
         </div>
 
-        <div className="p-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            {/* Vùng 1: Thông tin bước hiện tại (Bên trái) */}
-            <div className="space-y-6 bg-slate-50/50 p-6 rounded-[32px] border border-slate-100">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-1.5 h-5 bg-blue-600 rounded-full" />
-                <h4 className="text-base font-black text-slate-900 uppercase tracking-widest">THÔNG TIN BƯỚC</h4>
-              </div>
-              <div className="grid grid-cols-1 gap-6">
+        <div className="p-8 space-y-10">
+          {/* Vùng 1: Thông tin bước hiện tại (Trên cùng, Full Width) */}
+          <div className="space-y-6 pb-8 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-5 bg-blue-600 rounded-full" />
+              <h4 className="text-xl font-black text-slate-900 uppercase tracking-widest">THÔNG TIN BƯỚC</h4>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              <div className="lg:col-span-8 space-y-6">
                 <div className="space-y-1">
                   <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Tên bước cha</p>
-                  <p className="text-lg font-bold text-slate-700">{activeStep?.name}</p>
+                  <p className="text-2xl font-black text-slate-900 leading-tight tracking-tight">{activeStep?.name}</p>
                 </div>
+                
                 <div className="space-y-1">
                   <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Tên bước con</p>
-                  <p className="text-lg font-bold text-blue-600">{activeSubStep?.name || '---'}</p>
+                  <p className="text-2xl font-black text-blue-600 leading-tight tracking-tight">{activeSubStep?.name || '---'}</p>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-black text-slate-400 uppercase tracking-widest">HXL (Kế hoạch)</p>
-                  <div className="flex flex-col gap-1">
-                    <p className="text-base font-medium text-slate-600">
-                      CQNN: <span className="font-bold">{formatDate(project.milestones?.[activeSubStep?.id || '']?.agency)}</span>
-                    </p>
-                    <p className="text-base font-medium text-slate-600">
-                      CĐT: <span className="font-bold">{formatDate(project.milestones?.[activeSubStep?.id || '']?.investor)}</span>
-                    </p>
+              </div>
+
+              <div className="lg:col-span-4 flex flex-col justify-end space-y-4">
+                <p className="text-sm font-black text-slate-400 uppercase tracking-widest">HXL (Kế hoạch)</p>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">CQNN:</span>
+                    <span className="text-xl font-black text-slate-700">{formatDate(project.milestones?.[activeSubStep?.id || '']?.agency) || '---'}</span>
+                  </div>
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">CĐT:</span>
+                    <span className="text-xl font-black text-slate-700">{formatDate(project.milestones?.[activeSubStep?.id || '']?.investor) || '---'}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            {/* Vùng 2: Nội dung xử lý (Bên trái) */}
+            <div className="space-y-8">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-5 bg-blue-600 rounded-full" />
+                <h4 className="text-xl font-black text-slate-900 uppercase tracking-widest">NỘI DUNG XỬ LÝ</h4>
+              </div>
+
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">NHẬP NỘI DUNG XỬ LÝ *</label>
+                  <textarea 
+                    className="w-full p-4 bg-white border border-slate-200 rounded-2xl min-h-[120px] focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all text-slate-700 font-medium placeholder:text-slate-300"
+                    placeholder="Nhập nội dung xử lý chi tiết... Ví dụ: Đã tiếp nhận hồ sơ, đang thẩm định tính pháp lý dự án, yêu cầu bổ sung giấy tờ A, B, C..."
+                    value={processingContent}
+                    onChange={(e) => setProcessingContent(e.target.value)}
+                  />
+                </div>
+
+                <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <Info size={16} className="text-blue-600" />
+                  </div>
+                  <p className="text-sm font-bold text-blue-700">Vui lòng cập nhật trạng thái và ngày hoàn thành trước khi lưu.</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">NGÀY HOÀN THÀNH DỰ KIẾN</label>
+                    <div className="relative">
+                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                      <input 
+                        type="date"
+                        className="w-full pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all text-slate-700 font-bold"
+                        value={completionDate}
+                        onChange={(e) => setCompletionDate(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">TRẠNG THÁI *</label>
+                    <div className="relative">
+                      <select 
+                        className="w-full px-4 py-3.5 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all text-slate-700 font-bold appearance-none cursor-pointer"
+                        value={currentStatus}
+                        onChange={(e) => setCurrentStatus(e.target.value)}
+                      >
+                        {stepStatuses.map(status => (
+                          <option key={status} value={status}>
+                            {status}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 pt-4">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">HỒ SƠ ĐÍNH KÈM</label>
+                  <div className="flex flex-col gap-4">
+                    <button className="flex items-center gap-3 px-6 py-4 bg-slate-50 border-2 border-dashed border-slate-200 text-slate-400 rounded-2xl text-sm font-bold hover:bg-slate-100 hover:border-slate-300 hover:text-slate-600 transition-all justify-center group">
+                      <Paperclip size={20} className="group-hover:scale-110 transition-transform" />
+                      Chọn tệp tin đính kèm (Có thể chọn nhiều file)
+                    </button>
+                    <div className="flex flex-wrap gap-2">
+                      <div className="px-3 py-2 bg-slate-50 text-slate-600 rounded-xl text-xs font-bold flex items-center gap-2 border border-slate-200 group">
+                        <FileText size={14} className="text-blue-500" />
+                        Bao-cao-tien-do.pdf
+                        <button className="text-slate-400 hover:text-red-500 font-black text-lg leading-none ml-1">×</button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Vùng 2: Cập nhật trạng thái (Bên phải) */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-1.5 h-5 bg-emerald-500 rounded-full" />
-                <h4 className="text-base font-black text-slate-900 uppercase tracking-widest">CẬP NHẬT TRẠNG THÁI</h4>
+            {/* Vùng 3: Cập nhật trạng thái (Bên phải) */}
+            <div className="space-y-8">
+              <div className="flex items-center gap-2">
+                <div className="w-1.5 h-5 bg-blue-600 rounded-full" />
+                <h4 className="text-xl font-black text-slate-900 uppercase tracking-widest">CẬP NHẬT TRẠNG THÁI</h4>
               </div>
-              <div className="space-y-6">
-                <FormSelect label="Trạng thái bước" options={stepStatuses} defaultValue="Đang xử lý" />
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormSelect 
-                    label="Bước tiếp theo" 
-                    options={allSubSteps.map(ss => ({ label: ss.name, value: ss.id }))} 
-                    value={nextStepId}
-                    onChange={(e: any) => setNextStepId(e.target.value)}
-                    placeholder="Chọn bước tiếp theo..."
-                  />
-                  <FormField label="Ngày hoàn thành" type="date" />
+
+              <div className="space-y-8">
+                <div className="space-y-3">
+                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">BƯỚC TIẾP THEO</label>
+                  <div className="relative">
+                    <div className="flex flex-wrap gap-2 p-3 bg-white border border-slate-200 rounded-2xl min-h-[56px] cursor-pointer hover:border-blue-300 transition-all focus-within:ring-2 focus-within:ring-blue-100">
+                      {nextStepIds.length === 0 && <span className="text-slate-400 text-base">Chọn các bước tiếp theo...</span>}
+                      {nextStepIds.map(id => {
+                        const step = allSubSteps.find(s => s.id === id);
+                        return (
+                          <div key={id} className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-xl text-sm font-bold flex items-center gap-2 border border-blue-100">
+                            {step?.name}
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setNextStepIds(nextStepIds.filter(i => i !== id));
+                              }} 
+                              className="text-blue-400 hover:text-blue-600 font-black text-lg leading-none"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <select 
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val && !nextStepIds.includes(val)) {
+                          setNextStepIds([...nextStepIds, val]);
+                        }
+                        e.target.value = "";
+                      }}
+                    >
+                      <option value="">Thêm bước...</option>
+                      {allSubSteps
+                        .filter(ss => ss.id !== activeSubStepId)
+                        .map(ss => (
+                        <option key={ss.id} value={ss.id} disabled={nextStepIds.includes(ss.id)}>{ss.name}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
-                {nextSubStep && (
-                  <div className="p-4 bg-blue-50/50 rounded-2xl border border-blue-100 space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <div className="flex items-center gap-2">
-                      <Info size={18} className="text-blue-600" />
-                      <span className="text-sm font-black text-blue-900 uppercase tracking-widest">Thông tin bước tiếp theo</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Cơ quan xử lý</p>
-                        <p className="text-base font-bold text-slate-700">{nextSubStep.agency || '---'}</p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest">HXL dự kiến</p>
-                        <p className="text-base font-bold text-blue-600">
-                          {formatDate(project.milestones?.[nextSubStep.id]?.agency) || '---'}
-                        </p>
-                      </div>
-                    </div>
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-5 bg-blue-600 rounded-full" />
+                    <h4 className="text-xl font-black text-slate-900 uppercase tracking-widest">NGÀY HOÀN THÀNH DỰ KIẾN</h4>
                   </div>
-                )}
-
-                <FormTextArea label="Nội dung xử lý" placeholder="Nhập nội dung chi tiết..." />
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-black text-slate-400 uppercase tracking-widest ml-1">Hồ sơ đính kèm</label>
-                  <div className="flex flex-col gap-3">
-                    <button className="flex items-center gap-2 px-4 py-3 bg-slate-50 border border-dashed border-slate-300 text-slate-600 rounded-2xl text-base font-bold hover:bg-slate-100 transition-all justify-center">
-                      <Paperclip size={22} />
-                      Chọn tệp tin đính kèm (Có thể chọn nhiều file)
-                    </button>
-                    <div className="flex flex-wrap gap-2">
-                      <div className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-sm font-bold flex items-center gap-2 border border-blue-100">
-                        <FileText size={16} />
-                        Bao-cao-tien-do.pdf
-                        <button className="text-blue-400 hover:text-blue-600">×</button>
+                  
+                  <div className="grid grid-cols-1 gap-4">
+                    {nextStepIds.length === 0 ? (
+                      <div className="p-8 border-2 border-dashed border-slate-100 rounded-[24px] flex flex-col items-center justify-center text-slate-300 space-y-2">
+                        <Info size={32} strokeWidth={1} />
+                        <p className="text-sm font-bold uppercase tracking-widest">Chưa chọn bước tiếp theo</p>
                       </div>
-                    </div>
+                    ) : (
+                      nextStepIds.map(id => {
+                        const step = allSubSteps.find(s => s.id === id);
+                        if (!step) return null;
+                        return (
+                          <div key={id} className="p-6 bg-white rounded-[24px] border border-slate-100 shadow-sm hover:shadow-md transition-all group">
+                            <p className="text-base font-black text-blue-700 mb-4 uppercase tracking-tight group-hover:text-blue-800 transition-colors">{step.name}</p>
+                            <div className="flex items-end justify-between">
+                              <div className="space-y-1.5">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Cơ quan chủ trì</p>
+                                <p className="text-sm font-bold text-slate-700">{step.agency || '---'}</p>
+                              </div>
+                              <div className="space-y-1.5 text-right">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">HXL dự kiến</p>
+                                <p className="text-xl font-black text-slate-900">
+                                  {addDays(completionDate, step.slaDays)}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
               </div>
@@ -648,7 +842,7 @@ export default function HousingUpdateView({
 
 // --- Helper Components ---
 
-function FormField({ label, value, defaultValue, placeholder, type = 'text', readOnly = false }: any) {
+function FormField({ label, value, defaultValue, placeholder, type = 'text', readOnly = false, onChange }: any) {
   return (
     <div className="space-y-2">
       <label className="text-sm font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
@@ -658,6 +852,7 @@ function FormField({ label, value, defaultValue, placeholder, type = 'text', rea
         defaultValue={defaultValue}
         placeholder={placeholder}
         readOnly={readOnly}
+        onChange={onChange}
         className={`w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-lg outline-none transition-all ${
           readOnly ? 'bg-slate-50 text-slate-500 cursor-not-allowed' : 'focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300'
         }`}
@@ -696,13 +891,15 @@ function FormSelect({ label, options, value, defaultValue, onChange, readOnly = 
   );
 }
 
-function FormTextArea({ label, placeholder, defaultValue }: any) {
+function FormTextArea({ label, placeholder, defaultValue, value, onChange }: any) {
   return (
     <div className="space-y-2">
       <label className="text-sm font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
       <textarea 
         placeholder={placeholder}
         defaultValue={defaultValue}
+        value={value}
+        onChange={onChange}
         className="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-lg outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 min-h-[120px] transition-all"
       />
     </div>

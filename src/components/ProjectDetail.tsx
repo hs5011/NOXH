@@ -140,36 +140,6 @@ export default function ProjectDetail({ project, onClose }: ProjectDetailProps) 
               </div>
             </div>
 
-            {/* Progress Timeline */}
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h4 className="text-lg font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                  <Clock size={16} /> Tiến độ thực hiện
-                </h4>
-                <div className="flex gap-4 text-base font-bold text-slate-500">
-                  <span>Từ: {project.startDate || '---'}</span>
-                  <span>Đến: {project.endDate || '---'}</span>
-                </div>
-              </div>
-              <div className="relative pt-4 pb-8">
-                <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-100 -translate-y-1/2 rounded-full" />
-                <div 
-                  className="absolute top-1/2 left-0 h-1 bg-blue-500 -translate-y-1/2 rounded-full transition-all duration-1000" 
-                  style={{ width: `${project.progress}%` }}
-                />
-                <div className="flex justify-between relative z-10">
-                  {['Chuẩn bị', 'Giao đất', 'Cấp phép', 'Thi công', 'Nghiệm thu'].map((step, i) => (
-                    <div key={step} className="flex flex-col items-center gap-2">
-                      <div className={`w-4 h-4 rounded-full border-2 ${
-                        (i * 25) <= project.progress ? 'bg-blue-500 border-blue-200' : 'bg-white border-slate-200'
-                      }`} />
-                      <span className="text-base font-bold text-slate-500">{step}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
             {/* Files */}
             <div className="space-y-4">
               <h4 className="text-lg font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">

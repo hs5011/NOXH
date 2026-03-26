@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
-import { fetchJson } from '../services/apiService';
 
-export default function GanttView() {
-  const [projects, setProjects] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+interface GanttViewProps {
+  projects?: any[];
+}
+
+export default function GanttView({ projects: initialProjects = [] }: GanttViewProps) {
+  const [projects, setProjects] = useState<any[]>(initialProjects);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchJson('/api/v1/projects')
-      .then(data => {
-        setProjects(data);
-        setLoading(false);
-      });
-  }, []);
+    setProjects(initialProjects);
+  }, [initialProjects]);
+
 
   const months = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
 
