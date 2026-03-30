@@ -1328,10 +1328,6 @@ function DashboardContent({
             <div className="space-y-2">
               <div className="flex justify-between items-start gap-4">
                 <h2 className="text-xl font-black text-slate-800 leading-tight">{selectedProject.name}</h2>
-                <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 ${isOverdue ? 'bg-rose-100 text-rose-600 border border-rose-200' : 'bg-emerald-100 text-emerald-600 border border-emerald-200'}`}>
-                  {isOverdue ? <AlertCircle size={12} /> : <CheckCircle2 size={12} />}
-                  {isOverdue ? 'Trễ hạn' : 'Đúng hạn'}
-                </div>
               </div>
               <p className="text-sm font-bold text-slate-500 uppercase tracking-tight flex items-center gap-2">
                 <Building2 size={14} className="text-slate-400" />
@@ -1340,32 +1336,32 @@ function DashboardContent({
             </div>
 
             {/* Current Status Card */}
-            <div className="bg-blue-600 rounded-3xl p-5 text-white shadow-lg shadow-blue-200 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
-              <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="p-2 bg-white/20 rounded-xl">
-                    <Clock size={20} className="text-white" />
+            <div className="bg-blue-600 rounded-3xl p-6 text-white shadow-lg shadow-blue-200 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+              <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 md:gap-10">
+                <div className="flex items-center gap-4 flex-1 w-full">
+                  <div className="p-3 bg-white/20 rounded-2xl shrink-0">
+                    <Clock size={24} className="text-white" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-blue-100 uppercase tracking-widest">Đang xử lý tại</p>
-                    <p className="text-sm font-bold">{selectedProject.currentAgency}</p>
+                    <p className="text-[10px] font-black text-blue-100 uppercase tracking-widest mb-1">Đang xử lý tại</p>
+                    <p className="text-base font-bold leading-tight">{selectedProject.currentAgency}</p>
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-[10px] font-black text-blue-100 uppercase tracking-widest">Bước hiện tại</p>
-                    <p className="text-base font-black leading-tight mt-1">{selectedProject.childStep || selectedProject.currentStep}</p>
-                  </div>
-                  
-                  <div className="flex justify-between items-end">
+                <div className="flex-1 w-full">
+                  <p className="text-[10px] font-black text-blue-100 uppercase tracking-widest mb-1">Bước hiện tại</p>
+                  <p className="text-base font-bold leading-tight">{selectedProject.childStep || selectedProject.currentStep}</p>
+                </div>
+
+                <div className="flex-1 w-full">
+                  <div className="flex justify-between items-start md:block">
                     <div>
-                      <p className="text-[10px] font-black text-blue-100 uppercase tracking-widest">Thời hạn xử lý</p>
-                      <p className="text-sm font-bold mt-1">{selectedProject.stepDeadline || selectedProject.deadline}</p>
+                      <p className="text-[10px] font-black text-blue-100 uppercase tracking-widest mb-1">Thời hạn xử lý</p>
+                      <p className="text-base font-bold leading-tight">{selectedProject.stepDeadline || selectedProject.deadline}</p>
                     </div>
                     {selectedProject.delayDays && selectedProject.delayDays > 0 && (
-                      <div className="bg-rose-500 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest">
+                      <div className="bg-rose-500 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest mt-2 md:mt-2 md:inline-block">
                         Trễ {selectedProject.delayDays} ngày
                       </div>
                     )}
@@ -1377,7 +1373,7 @@ function DashboardContent({
             {/* Detailed Info Grid */}
             <section>
               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 px-1">Thông tin chi tiết</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Địa điểm</p>
                   <div className="flex items-start gap-2">
@@ -1399,13 +1395,6 @@ function DashboardContent({
                     <p className="text-xs font-bold text-slate-700 leading-tight">{selectedProject.currentDepartment || 'Chưa xác định'}</p>
                   </div>
                 </div>
-                <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Mã dự án</p>
-                  <div className="flex items-start gap-2">
-                    <FileText size={14} className="text-purple-500 mt-0.5" />
-                    <p className="text-xs font-bold text-slate-700 leading-tight">{selectedProject.code}</p>
-                  </div>
-                </div>
               </div>
             </section>
 
@@ -1415,64 +1404,56 @@ function DashboardContent({
                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Sơ đồ Gantt tiến độ chi tiết</h3>
               </div>
               
-              <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
-                  <div className="grid w-full min-w-[800px]" style={{ gridTemplateColumns: '2.5fr 1.5fr 1fr' }}>
-                    {/* Header Row */}
-                    <div className="bg-slate-50/80 p-4 border-r border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200">
-                      GIAI ĐOẠN / BƯỚC XỬ LÝ
-                    </div>
-                    <div className="bg-slate-50/80 p-4 border-r border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200">
-                      CƠ QUAN
-                    </div>
-                    <div className="bg-slate-50/80 p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200 text-center">
-                      TRẠNG THÁI
-                    </div>
+              <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-sm">
+                <div className="space-y-8">
+                  {ganttData.map((stageData, stageIdx) => (
+                    <div key={stageIdx} className="space-y-4">
+                      {/* Row 1: Stage Name */}
+                      <h4 className={`text-lg font-black uppercase tracking-tight ${stageData.status === 'current' ? 'text-blue-600' : 'text-slate-800'}`}>
+                        {stageData.stageName}
+                      </h4>
 
-                    {/* Data Rows */}
-                    {ganttData.map((stageData, stageIdx) => (
-                      <React.Fragment key={stageIdx}>
-                        {/* Stage Row - Spans all columns */}
-                        <div className="col-span-3 bg-slate-100/50 p-3 px-4 border-b border-slate-200">
-                          <h4 className={`text-[11px] font-black uppercase tracking-widest ${stageData.status === 'current' ? 'text-blue-600' : 'text-slate-500'}`}>
-                            {stageData.stageName}
-                          </h4>
-                        </div>
+                      <div className="space-y-6">
+                        {stageData.steps.map((step, stepIdx) => {
+                          // Determine if it's a child step (not the first one in stage or has specific logic)
+                          // In our data, stepIdx 0 is usually the parent step of the stage group
+                          const isChild = stepIdx > 0;
+                          
+                          // Map colors to match image
+                          let barClass = "bg-slate-100 text-slate-400";
+                          if (step.status === 'completed') {
+                            barClass = step.isDelayed ? "bg-[#F26A7E] text-white" : "bg-[#50D38D] text-white";
+                          } else if (step.status === 'current') {
+                            barClass = "bg-[#4F86F7] text-white";
+                          }
 
-                        {/* Step Rows */}
-                        {stageData.steps.map((step, stepIdx) => (
-                          <React.Fragment key={stepIdx}>
-                            {/* Column 1: Step Name */}
-                            <div className="bg-slate-50/30 p-4 border-r border-slate-100 border-b border-slate-50">
-                              <div className="flex items-start gap-3">
-                                <div className="mt-1 w-1.5 h-1.5 rounded-full bg-slate-300 flex-shrink-0"></div>
-                                <p className="text-[11px] font-bold text-slate-700 leading-tight">
-                                  {step.stepName}
-                                </p>
-                              </div>
-                            </div>
-                            
-                            {/* Column 2: Agency */}
-                            <div className="p-4 border-r border-slate-100 border-b border-slate-50 flex items-center">
-                              <p className="text-[11px] font-medium text-slate-500 leading-tight">
-                                {step.agency}
+                          return (
+                            <div key={stepIdx} className={`relative ${isChild ? 'pl-8' : ''}`}>
+                              {isChild && (
+                                <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-slate-100"></div>
+                              )}
+                              
+                              {/* Row 2: Step Name */}
+                              <p className="text-sm font-bold text-slate-500 mb-3 leading-tight">
+                                {step.stepName}
                               </p>
-                            </div>
-                            
-                            {/* Column 3: Status */}
-                            <div className="p-4 border-b border-slate-50 flex items-center justify-center">
-                              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl w-full max-w-[120px] justify-center shadow-sm ${step.pillClass}`}>
-                                <step.StatusIcon size={12} className={step.status === 'current' ? 'fill-blue-600 text-white' : ''} />
-                                <span className="text-[10px] font-black uppercase tracking-tight whitespace-nowrap">
-                                  {step.statusText}
-                                </span>
+
+                              {/* Row 3: Agency & Status Bar */}
+                              <div className={`flex items-center justify-between px-5 py-3 rounded-2xl shadow-sm ${barClass}`}>
+                                <span className="text-sm font-black truncate mr-4">{step.agency}</span>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  <step.StatusIcon size={16} className="text-white opacity-90" />
+                                  <span className="text-xs font-black uppercase tracking-widest">
+                                    {step.statusText}
+                                  </span>
+                                </div>
                               </div>
                             </div>
-                          </React.Fragment>
-                        ))}
-                      </React.Fragment>
-                    ))}
-                  </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
               
