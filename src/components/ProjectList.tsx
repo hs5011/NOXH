@@ -205,26 +205,26 @@ export default function ProjectList({
   if (loading) return <div className="p-8 text-center text-slate-500">Đang tải dữ liệu...</div>;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900">Danh sách Dự án NOXH</h2>
-          <p className="text-slate-500 text-sm">
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Danh sách Dự án NOXH</h2>
+          <p className="text-slate-500 text-xs sm:text-sm">
             Đang hiển thị {filteredProjects.length} dự án
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           <button 
             onClick={exportToCSV}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs sm:text-sm font-bold text-slate-700 hover:bg-slate-50 transition-all"
           >
-            <Download size={18} /> Xuất báo cáo
+            <Download size={16} /> <span className="hidden xs:inline">Xuất báo cáo</span><span className="xs:hidden">Xuất</span>
           </button>
           <button 
             onClick={onCreateClick}
-            className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-xl text-xs sm:text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all"
           >
-            <Plus size={18} /> Khởi tạo Dự án
+            <Plus size={16} /> <span className="hidden xs:inline">Khởi tạo Dự án</span><span className="xs:hidden">Thêm mới</span>
           </button>
         </div>
       </div>
@@ -322,8 +322,8 @@ export default function ProjectList({
 
       <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden">
         {/* Header Row */}
-        <div className="bg-slate-50/50 border-b border-slate-100 flex items-center justify-between px-10 py-5">
-          <div className="text-[13px] font-black text-slate-400 uppercase tracking-[0.2em] ml-16">Thông tin dự án & Tiến độ</div>
+        <div className="bg-slate-50/50 border-b border-slate-100 flex items-center justify-between px-4 sm:px-10 py-3 sm:py-5">
+          <div className="text-[11px] sm:text-[13px] font-black text-slate-400 uppercase tracking-[0.1em] sm:tracking-[0.2em] ml-10 sm:ml-16">Thông tin dự án & Tiến độ</div>
         </div>
 
         {/* Project Cards List */}
@@ -331,24 +331,25 @@ export default function ProjectList({
           {paginatedProjects.length > 0 ? paginatedProjects.map((p) => {
             const statusDetails = getProjectStatusDetails(p);
             return (
-              <div key={p.id} className="p-8 hover:bg-blue-50/10 transition-all flex flex-col group relative">
+              <div key={p.id} className="p-4 sm:p-8 hover:bg-blue-50/10 transition-all flex flex-col group relative">
                 {/* Project Info Section */}
                 <div className="w-full">
-                  <div className="flex items-start justify-between gap-5 mb-8">
-                    <div className="flex items-start gap-5">
-                      <div className="mt-1.5 w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 shadow-sm">
-                        <CheckCircle2 size={18} />
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 sm:gap-5 mb-4 sm:mb-8">
+                    <div className="flex items-start gap-3 sm:gap-5">
+                      <div className="mt-1 w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 shadow-sm">
+                        <CheckCircle2 size={14} className="sm:hidden" />
+                        <CheckCircle2 size={18} className="hidden sm:block" />
                       </div>
                       <div className="min-w-0">
-                        <h3 className="text-2xl font-black text-slate-900 group-hover:text-blue-600 transition-colors leading-tight mb-1">
-                          {p.name} <span className="text-slate-400 font-medium">— {p.location}</span>
+                        <h3 className="text-lg sm:text-2xl font-black text-slate-900 group-hover:text-blue-600 transition-colors leading-tight mb-1">
+                          {p.name} <span className="text-slate-400 font-medium block sm:inline">— {p.location}</span>
                         </h3>
-                        <p className="text-sm text-slate-400 font-bold uppercase tracking-[0.15em]">{p.code}</p>
+                        <p className="text-[10px] sm:text-sm text-slate-400 font-bold uppercase tracking-[0.1em] sm:tracking-[0.15em]">{p.code}</p>
                       </div>
                     </div>
 
-                    {/* Action Buttons moved here */}
-                    <div className="flex items-center gap-2 shrink-0">
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-9 sm:ml-0">
                       <div className="relative group/action">
                         <button 
                           onClick={(e) => { e.stopPropagation(); onUpdatePlanClick?.(p); }}
@@ -388,17 +389,17 @@ export default function ProjectList({
                   </div>
 
                   {/* Steps Nested Cards */}
-                  <div className="ml-12 space-y-5">
+                  <div className="ml-0 sm:ml-12 space-y-4 sm:space-y-5">
                     {statusDetails.map((step: any) => {
                       const currentProcess = processes.find(proc => proc.id === p.processId);
                       const currentStageIndex = projectStages.indexOf(step.stage);
 
                       return (
-                        <div key={step.id} className="bg-white rounded-[24px] border border-slate-100 p-6 shadow-sm hover:shadow-md transition-all border-l-4 border-l-blue-500">
+                        <div key={step.id} className="bg-white rounded-[20px] sm:rounded-[24px] border border-slate-100 p-4 sm:p-6 shadow-sm hover:shadow-md transition-all border-l-4 border-l-blue-500">
                           {/* Step Header: Timeline */}
-                          <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-8">
-                              <div className="flex items-center gap-5">
+                          <div className="flex items-center justify-between mb-4 sm:mb-6 overflow-x-auto pb-2 scrollbar-hide">
+                            <div className="flex items-center gap-4 sm:gap-8 min-w-max">
+                              <div className="flex items-center gap-3 sm:gap-5">
                                 {projectStages.map((stage, idx) => {
                                   const isCurrentStage = idx === currentStageIndex;
                                   const isCompleted = idx < currentStageIndex;
@@ -442,15 +443,15 @@ export default function ProjectList({
                           </div>
 
                           {/* Step Details */}
-                          <div className="flex items-center justify-between gap-10">
-                            <div className="flex-1 space-y-2">
-                              <p className="text-base font-bold text-slate-700">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-10">
+                            <div className="flex-1 space-y-1 sm:space-y-2">
+                              <p className="text-sm sm:text-base font-bold text-slate-700">
                                 Bước hiện tại: <span className="text-slate-900">{step.name}</span>
                               </p>
-                              <div className="flex items-center gap-3 text-sm text-slate-500 font-bold">
+                              <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-slate-500 font-bold">
                                 <span className="text-blue-600">{step.agency || 'N/A'}</span>
-                                <span className="text-slate-200">|</span>
-                                <span className="uppercase tracking-widest text-[11px]">HXL:</span>
+                                <span className="hidden sm:inline text-slate-200">|</span>
+                                <span className="uppercase tracking-widest text-[9px] sm:text-[11px]">HXL:</span>
                                 <span className={getStatusColorClass(step.agencyDeadline, step.actualDate)}>
                                   {formatDate(step.agencyDeadline)}
                                 </span>
@@ -460,10 +461,10 @@ export default function ProjectList({
                             <div className="relative group/tooltip shrink-0">
                               <button 
                                 onClick={(e) => { e.stopPropagation(); onHousingUpdateClick?.(p, step.parentId, step.id); }}
-                                className="flex items-center gap-2 px-4 py-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm border border-blue-100 group/btn"
+                                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 sm:py-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm border border-blue-100 group/btn"
                               >
-                                <GitBranch size={18} className="group-hover/btn:rotate-12 transition-transform" />
-                                <span className="text-xs font-black uppercase tracking-widest">Cập nhật tiến độ</span>
+                                <GitBranch size={16} className="sm:size-[18px] group-hover/btn:rotate-12 transition-transform" />
+                                <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest">Cập nhật tiến độ</span>
                               </button>
                             </div>
                           </div>
@@ -483,27 +484,27 @@ export default function ProjectList({
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-8 py-6 bg-white border border-slate-200 rounded-[32px] shadow-lg shadow-slate-100 mt-6">
-          <div className="flex flex-col">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-8 py-4 sm:py-6 bg-white border border-slate-200 rounded-[24px] sm:rounded-[32px] shadow-lg shadow-slate-100 mt-6">
+          <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-1">Trang hiện tại</p>
-            <p className="text-xs text-slate-500 font-medium">
-              Hiển thị <span className="text-slate-900 font-bold">{(currentPage - 1) * itemsPerPage + 1}</span> - <span className="text-slate-900 font-bold">{Math.min(currentPage * itemsPerPage, filteredProjects.length)}</span> trong tổng số <span className="text-slate-900 font-bold">{filteredProjects.length}</span> dự án
+            <p className="text-[10px] sm:text-xs text-slate-500 font-medium">
+              Hiển thị <span className="text-slate-900 font-bold">{(currentPage - 1) * itemsPerPage + 1}</span> - <span className="text-slate-900 font-bold">{Math.min(currentPage * itemsPerPage, filteredProjects.length)}</span> / <span className="text-slate-900 font-bold">{filteredProjects.length}</span>
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button 
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all disabled:opacity-30 disabled:hover:bg-transparent border border-transparent hover:border-blue-100"
+              className="p-2 sm:p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl sm:rounded-2xl transition-all disabled:opacity-30 disabled:hover:bg-transparent border border-transparent hover:border-blue-100"
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={18} className="sm:size-5" />
             </button>
-            <div className="flex items-center gap-1 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+            <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl sm:rounded-2xl border border-slate-100 overflow-x-auto max-w-[150px] sm:max-w-none">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                 <button
                   key={page}
                   onClick={() => handlePageChange(page)}
-                  className={`w-10 h-10 flex items-center justify-center rounded-xl text-xs font-bold transition-all ${
+                  className={`min-w-[32px] sm:min-w-[40px] h-8 sm:h-10 flex items-center justify-center rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all ${
                     currentPage === page 
                       ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' 
                       : 'text-slate-500 hover:bg-white hover:shadow-sm'
@@ -516,9 +517,9 @@ export default function ProjectList({
             <button 
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-2xl transition-all disabled:opacity-30 disabled:hover:bg-transparent border border-transparent hover:border-blue-100"
+              className="p-2 sm:p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl sm:rounded-2xl transition-all disabled:opacity-30 disabled:hover:bg-transparent border border-transparent hover:border-blue-100"
             >
-              <ChevronRight size={20} />
+              <ChevronRight size={18} className="sm:size-5" />
             </button>
           </div>
         </div>

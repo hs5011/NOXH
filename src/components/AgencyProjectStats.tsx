@@ -190,18 +190,18 @@ export default function AgencyProjectStats({ projects: initialProjects = [], pro
             className="space-y-6"
           >
             {/* Summary Statistics */}
-            <div className="flex items-center justify-center gap-12 py-2">
+            <div className="flex items-center justify-center gap-8 py-1">
               <div className="flex flex-col items-center">
-                <span className="text-3xl font-black text-blue-700 tracking-tighter">{totalProjects}</span>
-                <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest mt-1">Tổng dự án</span>
+                <span className="text-2xl font-black text-blue-700 tracking-tighter">{totalProjects}</span>
+                <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest mt-0.5">Tổng dự án</span>
               </div>
               <div className="flex flex-col items-center">
-                <span className="text-3xl font-black text-rose-700 tracking-tighter">{overdueProjects}</span>
-                <span className="text-[10px] font-black text-rose-400 uppercase tracking-widest mt-1">Quá hạn</span>
+                <span className="text-2xl font-black text-emerald-700 tracking-tighter">{onTimeProjects}</span>
+                <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mt-0.5">Còn hạn</span>
               </div>
               <div className="flex flex-col items-center">
-                <span className="text-3xl font-black text-emerald-700 tracking-tighter">{onTimeProjects}</span>
-                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mt-1">Còn hạn</span>
+                <span className="text-2xl font-black text-rose-700 tracking-tighter">{overdueProjects}</span>
+                <span className="text-[9px] font-black text-rose-400 uppercase tracking-widest mt-0.5">Quá hạn</span>
               </div>
             </div>
 
@@ -209,18 +209,18 @@ export default function AgencyProjectStats({ projects: initialProjects = [], pro
               {/* Investor Card */}
               <button
                 onClick={() => setView('investors')}
-                className="bg-white p-4 rounded-[32px] border border-slate-100 shadow-sm hover:shadow-xl hover:border-emerald-200 transition-all text-left group relative overflow-hidden"
+                className="bg-white p-3 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md hover:border-emerald-200 transition-all text-left group relative overflow-hidden"
               >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
+                <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
                 <div className="relative z-10">
-                  <div className="w-10 h-10 bg-emerald-600 rounded-2xl flex items-center justify-center text-white mb-3 shadow-lg shadow-emerald-200 group-hover:scale-110 transition-transform">
-                    <Building2 size={20} />
+                  <div className="w-8 h-8 bg-emerald-600 rounded-xl flex items-center justify-center text-white mb-2 shadow-lg shadow-emerald-200 group-hover:scale-110 transition-transform">
+                    <Building2 size={16} />
                   </div>
-                  <h3 className="text-xl font-black text-slate-800 leading-tight mb-1 group-hover:text-emerald-600 transition-colors">Chủ đầu tư</h3>
-                  <div className="flex items-end justify-between mt-4">
-                    <div className="space-y-1">
-                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Tổng số CĐT</p>
-                      <p className="text-4xl font-black text-slate-900 tracking-tighter">{investors.length}</p>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-black text-slate-800 leading-tight group-hover:text-emerald-600 transition-colors">Chủ đầu tư</h3>
+                    <div className="flex flex-col items-end">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tổng số CĐT</p>
+                      <p className="text-2xl font-black text-slate-900 tracking-tighter leading-none">{investors.length}</p>
                     </div>
                   </div>
                 </div>
@@ -231,44 +231,56 @@ export default function AgencyProjectStats({ projects: initialProjects = [], pro
                 return (
                   <div
                     key={agency.id}
-                    className="bg-white p-4 rounded-[32px] border border-slate-100 shadow-sm group relative overflow-hidden"
+                    className="bg-white p-3 rounded-3xl border border-slate-100 shadow-sm group relative overflow-hidden"
                   >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500" />
                     
                     <div className="relative z-10">
-                      <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center text-white mb-2 shadow-lg shadow-blue-200 group-hover:scale-110 transition-transform">
-                        <Building2 size={20} />
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200 group-hover:scale-110 transition-transform">
+                            <Building2 size={16} />
+                          </div>
+                          <h3 className="text-base font-black text-slate-800 leading-tight group-hover:text-blue-600 transition-colors truncate max-w-[120px]">{agency.name}</h3>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5">Tổng số</p>
+                          <p className="text-xl font-black text-slate-900 leading-none">{stats.total}</p>
+                        </div>
                       </div>
-                      <h3 className="text-xl font-black text-slate-800 leading-none mb-0.5 group-hover:text-blue-600 transition-colors">{agency.name}</h3>
-                      <p className="text-[11px] text-slate-500 font-medium leading-none">Tổng số {stats.total} dự án</p>
                       
-                      <div className="flex items-end justify-between mt-1">
-                        <button 
-                          onClick={() => {
-                            setSelectedAgency(agency);
-                            if (agency.name === '168 Phường xã') {
-                              setView('departments');
-                            } else {
-                              setView('projects');
-                            }
-                          }}
-                          className="hover:scale-110 transition-transform"
-                        >
-                          <span className="text-3xl font-black text-emerald-600 leading-none">{stats.total - stats.delayed}</span>
-                        </button>
-                        <button 
-                          onClick={() => {
-                            setSelectedAgency(agency);
-                            if (agency.name === '168 Phường xã') {
-                              setView('departments');
-                            } else {
-                              setView('projects');
-                            }
-                          }}
-                          className="hover:scale-110 transition-transform"
-                        >
-                          <span className="text-3xl font-black text-rose-600 leading-none">{stats.delayed}</span>
-                        </button>
+                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-50">
+                        <div className="flex items-center gap-4">
+                          <button 
+                            onClick={() => {
+                              setSelectedAgency(agency);
+                              if (agency.name === '168 Phường xã') {
+                                setView('departments');
+                              } else {
+                                setView('projects');
+                              }
+                            }}
+                            className="flex flex-col items-center hover:scale-110 transition-transform"
+                          >
+                            <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest leading-none mb-1">Còn hạn</span>
+                            <span className="text-xl font-black text-emerald-600 leading-none">{stats.total - stats.delayed}</span>
+                          </button>
+                          <button 
+                            onClick={() => {
+                              setSelectedAgency(agency);
+                              if (agency.name === '168 Phường xã') {
+                                setView('departments');
+                              } else {
+                                setView('projects');
+                              }
+                            }}
+                            className="flex flex-col items-center hover:scale-110 transition-transform"
+                          >
+                            <span className="text-[9px] font-black text-rose-400 uppercase tracking-widest leading-none mb-1">Quá hạn</span>
+                            <span className="text-xl font-black text-rose-600 leading-none">{stats.delayed}</span>
+                          </button>
+                        </div>
+                        <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
                       </div>
                     </div>
                   </div>
@@ -292,32 +304,35 @@ export default function AgencyProjectStats({ projects: initialProjects = [], pro
               .map((item, idx) => (
                 <div
                   key={idx}
-                  className="bg-white p-3 rounded-3xl border border-slate-100 shadow-sm transition-all text-left group flex items-center justify-between"
+                  className="bg-white p-2 rounded-2xl border border-slate-100 shadow-sm transition-all text-left group flex items-center justify-between"
                 >
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-black text-slate-800 truncate mb-0.5 leading-tight group-hover:text-blue-600 transition-colors">{item.name}</h3>
+                  <div className="flex-1 min-w-0 flex items-center justify-between px-2">
                     <div className="flex flex-col">
-                      <p className="text-[11px] font-medium text-slate-400 mb-1 leading-none">Tổng số {item.stats.total} dự án</p>
-                      <div className="flex items-center justify-between">
-                        <button 
-                          onClick={() => {
-                            setSelectedDepartment(item.name);
-                            setView('projects');
-                          }}
-                          className="hover:scale-110 transition-transform"
-                        >
-                          <span className="text-3xl font-black text-emerald-600 leading-none">{item.stats.total - item.stats.delayed}</span>
-                        </button>
-                        <button 
-                          onClick={() => {
-                            setSelectedDepartment(item.name);
-                            setView('projects');
-                          }}
-                          className="hover:scale-110 transition-transform"
-                        >
-                          <span className="text-3xl font-black text-rose-600 leading-none">{item.stats.delayed}</span>
-                        </button>
-                      </div>
+                      <h3 className="text-base font-black text-slate-800 truncate leading-tight group-hover:text-blue-600 transition-colors">{item.name}</h3>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mt-0.5">Tổng số {item.stats.total} dự án</p>
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <button 
+                        onClick={() => {
+                          setSelectedDepartment(item.name);
+                          setView('projects');
+                        }}
+                        className="flex flex-col items-center hover:scale-110 transition-transform"
+                      >
+                        <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest leading-none mb-1">Còn hạn</span>
+                        <span className="text-xl font-black text-emerald-600 leading-none">{item.stats.total - item.stats.delayed}</span>
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setSelectedDepartment(item.name);
+                          setView('projects');
+                        }}
+                        className="flex flex-col items-center hover:scale-110 transition-transform"
+                      >
+                        <span className="text-[9px] font-black text-rose-400 uppercase tracking-widest leading-none mb-1">Quá hạn</span>
+                        <span className="text-xl font-black text-rose-600 leading-none">{item.stats.delayed}</span>
+                      </button>
+                      <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
                     </div>
                   </div>
                 </div>

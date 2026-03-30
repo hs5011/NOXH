@@ -119,63 +119,67 @@ export default function DashboardView({ projects: initialProjects = [], onCreate
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex items-end justify-between">
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h2 className="text-4xl font-bold text-slate-900 tracking-tight">Điều hành Dự án NOXH</h2>
-          <p className="text-slate-500 text-lg mt-1">Tổng hợp dữ liệu tiến độ thực hiện các dự án Nhà ở xã hội TP.HCM</p>
+          <h2 className="text-2xl sm:text-4xl font-bold text-slate-900 tracking-tight">Điều hành Dự án NOXH</h2>
+          <p className="text-slate-500 text-sm sm:text-lg mt-1">Tổng hợp dữ liệu tiến độ thực hiện các dự án Nhà ở xã hội TP.HCM</p>
         </div>
         <button 
           onClick={onCreateClick}
-          className="px-6 py-3 bg-blue-600 text-white rounded-2xl text-base font-bold shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all"
+          className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-2xl text-sm sm:text-base font-bold shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all"
         >
           Khởi tạo dự án
         </button>
       </div>
 
       {/* KPI SUMMARY */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         {kpis.map((kpi, i) => <StatCard key={i} {...kpi} />)}
       </div>
 
       {/* Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <h3 className="font-bold text-xl text-slate-900 mb-6">Phân bổ dự án theo giai đoạn</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie data={stageData} innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value">
-                {stageData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <h3 className="font-bold text-lg sm:text-xl text-slate-900 mb-4 sm:mb-6">Phân bổ dự án theo giai đoạn</h3>
+          <div className="h-[250px] sm:h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={stageData} innerRadius={50} outerRadius={80} paddingAngle={5} dataKey="value">
+                  {stageData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                </Pie>
+                <Tooltip />
+                <Legend iconSize={10} wrapperStyle={{ fontSize: '12px' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <h3 className="font-bold text-xl text-slate-900 mb-6">Thống kê theo cơ quan xử lý</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={agencyData} layout="vertical">
-              <XAxis type="number" />
-              <YAxis dataKey="name" type="category" width={150} tick={{fontSize: 14}} />
-              <Tooltip />
-              <Bar dataKey="value" fill="#3b82f6" />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <h3 className="font-bold text-lg sm:text-xl text-slate-900 mb-4 sm:mb-6">Thống kê theo cơ quan xử lý</h3>
+          <div className="h-[250px] sm:h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={agencyData} layout="vertical">
+                <XAxis type="number" />
+                <YAxis dataKey="name" type="category" width={100} tick={{fontSize: 10}} />
+                <Tooltip />
+                <Bar dataKey="value" fill="#3b82f6" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
       {/* Row 2: Danh sách dự án cần theo dõi */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-        <h3 className="font-bold text-xl text-slate-900 mb-6">Danh sách dự án cần theo dõi</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-base">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
+        <h3 className="font-bold text-lg sm:text-xl text-slate-900 mb-4 sm:mb-6">Danh sách dự án cần theo dõi</h3>
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <table className="w-full text-sm sm:text-base min-w-[600px] sm:min-w-0">
             <thead>
-              <tr className="text-slate-400 text-base uppercase text-left">
-                <th className="pb-4">Mã dự án</th>
+              <tr className="text-slate-400 text-xs sm:text-base uppercase text-left">
+                <th className="pb-4 px-4 sm:px-0">Mã dự án</th>
                 <th className="pb-4">Tên dự án</th>
-                <th className="pb-4">Bước hiện tại</th>
-                <th className="pb-4">Cơ quan xử lý</th>
+                <th className="pb-4 hidden sm:table-cell">Bước hiện tại</th>
+                <th className="pb-4 hidden md:table-cell">Cơ quan xử lý</th>
                 <th className="pb-4">% Hoàn thành</th>
                 <th className="pb-4">Trạng thái</th>
               </tr>
@@ -183,13 +187,13 @@ export default function DashboardView({ projects: initialProjects = [], onCreate
             <tbody className="divide-y divide-slate-100">
               {watchProjects.length > 0 ? watchProjects.map(p => (
                 <tr key={p.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => onNavigateToProjects({ id: p.id })}>
-                  <td className="py-4 font-bold text-base">{p.code}</td>
-                  <td className="py-4 text-base truncate max-w-[200px]" title={p.name}>{p.name}</td>
-                  <td className="py-4 text-base">{p.currentStep}</td>
-                  <td className="py-4 text-base">{p.currentAgency}</td>
-                  <td className="py-4 text-base">{p.progress}%</td>
-                  <td className="py-4">
-                    <span className={`px-2 py-1 rounded-lg text-sm font-bold uppercase ${p.status === 'Delayed' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>
+                  <td className="py-3 sm:py-4 px-4 sm:px-0 font-bold">{p.code}</td>
+                  <td className="py-3 sm:py-4 truncate max-w-[150px] sm:max-w-[200px]" title={p.name}>{p.name}</td>
+                  <td className="py-3 sm:py-4 hidden sm:table-cell">{p.currentStep}</td>
+                  <td className="py-3 sm:py-4 hidden md:table-cell">{p.currentAgency}</td>
+                  <td className="py-3 sm:py-4">{p.progress}%</td>
+                  <td className="py-3 sm:py-4">
+                    <span className={`px-2 py-0.5 sm:py-1 rounded-lg text-[10px] sm:text-sm font-bold uppercase ${p.status === 'Delayed' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>
                       {p.status === 'Delayed' ? 'Quá hạn' : 'Cảnh báo'}
                     </span>
                   </td>
@@ -205,13 +209,13 @@ export default function DashboardView({ projects: initialProjects = [], onCreate
       </div>
 
       {/* Row 3: Gantt Chart */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-        <h3 className="font-bold text-xl text-slate-900 mb-6">Gantt Chart tổng thể (Top 5 dự án mới cập nhật)</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-base border-collapse">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
+        <h3 className="font-bold text-lg sm:text-xl text-slate-900 mb-4 sm:mb-6">Gantt Chart tổng thể (Top 5 dự án mới cập nhật)</h3>
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <table className="w-full text-sm sm:text-base border-collapse min-w-[600px] sm:min-w-0">
             <thead>
-              <tr className="text-slate-400 text-base uppercase text-left">
-                <th className="pb-4 pr-4">Mã dự án</th>
+              <tr className="text-slate-400 text-xs sm:text-base uppercase text-left">
+                <th className="pb-4 px-4 sm:px-0 pr-4">Mã dự án</th>
                 <th className="pb-4 pr-4">Tên dự án</th>
                 <th className="pb-4">Timeline (15 bước)</th>
               </tr>
@@ -219,10 +223,10 @@ export default function DashboardView({ projects: initialProjects = [], onCreate
             <tbody className="divide-y divide-slate-100">
               {projects.slice(0, 5).map((p, i) => (
                 <tr key={p.id}>
-                  <td className="py-4 pr-4 font-bold text-base">{p.code}</td>
-                  <td className="py-4 pr-4 text-base truncate max-w-[200px]" title={p.name}>{p.name}</td>
-                  <td className="py-4">
-                    <div className="flex gap-1 h-6">
+                  <td className="py-3 sm:py-4 px-4 sm:px-0 pr-4 font-bold">{p.code}</td>
+                  <td className="py-3 sm:py-4 pr-4 truncate max-w-[150px] sm:max-w-[200px]" title={p.name}>{p.name}</td>
+                  <td className="py-3 sm:py-4">
+                    <div className="flex gap-0.5 sm:gap-1 h-4 sm:h-6">
                       {[...Array(15)].map((_, step) => {
                         let color = 'bg-slate-200'; // chưa bắt đầu
                         const progressStep = Math.floor((p.progress / 100) * 15);
@@ -237,12 +241,12 @@ export default function DashboardView({ projects: initialProjects = [], onCreate
                         return (
                           <div 
                             key={step} 
-                            className={`w-6 rounded ${color} cursor-help relative`} 
+                            className={`w-3 sm:w-6 rounded-sm sm:rounded ${color} cursor-help relative`} 
                             onMouseEnter={() => setHoveredStep({step, project: p.id, info: `Bước ${step + 1}: ${stepNames[step]}\nThực hiện: ${agencyNames[step]}`})}
                             onMouseLeave={() => setHoveredStep(null)}
                           >
                             {hoveredStep?.step === step && hoveredStep?.project === p.id && (
-                              <div className="absolute z-50 bg-slate-800 text-white text-base p-2 rounded shadow-lg whitespace-pre-line w-48 -top-16 left-0">
+                              <div className="absolute z-50 bg-slate-800 text-white text-[10px] sm:text-base p-2 rounded shadow-lg whitespace-pre-line w-32 sm:w-48 -top-16 left-0">
                                 {hoveredStep.info}
                               </div>
                             )}
@@ -259,45 +263,47 @@ export default function DashboardView({ projects: initialProjects = [], onCreate
       </div>
 
       {/* Row 4 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <h3 className="font-bold text-xl text-slate-900 mb-6">Thống kê theo khu vực</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={regionData}>
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="value" fill="#10b981" onClick={handleRegionClick} className="cursor-pointer" />
-            </BarChart>
-          </ResponsiveContainer>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <h3 className="font-bold text-lg sm:text-xl text-slate-900 mb-4 sm:mb-6">Thống kê theo khu vực</h3>
+          <div className="h-[250px] sm:h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={regionData}>
+                <XAxis dataKey="name" tick={{fontSize: 10}} />
+                <YAxis tick={{fontSize: 10}} />
+                <Tooltip />
+                <Bar dataKey="value" fill="#10b981" onClick={handleRegionClick} className="cursor-pointer" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <h3 className="font-bold text-xl text-slate-900 mb-6">Danh sách bước đang tắc</h3>
-          <div className="space-y-4">
+        <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <h3 className="font-bold text-lg sm:text-xl text-slate-900 mb-4 sm:mb-6">Danh sách bước đang tắc</h3>
+          <div className="space-y-3 sm:space-y-4">
             {stuckSteps.map(({step, count}, i) => (
               <div key={i} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleStepClick(step)}>
-                <span className="font-bold text-base">{step}</span>
-                <span className="px-2 py-1 bg-slate-200 rounded-lg text-base font-bold">{count} dự án</span>
+                <span className="font-bold text-sm sm:text-base">{step}</span>
+                <span className="px-2 py-1 bg-slate-200 rounded-lg text-xs sm:text-base font-bold">{count} dự án</span>
               </div>
             ))}
             {stuckSteps.length === 0 && (
-              <div className="text-slate-500 text-center py-4">Không có dữ liệu</div>
+              <div className="text-slate-500 text-center py-4 text-sm">Không có dữ liệu</div>
             )}
           </div>
         </div>
       </div>
 
       {/* Row 5: Cảnh báo hệ thống */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-        <h3 className="font-bold text-xl text-slate-900 mb-6">Cảnh báo hệ thống</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
+        <h3 className="font-bold text-lg sm:text-xl text-slate-900 mb-4 sm:mb-6">Cảnh báo hệ thống</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
           {alerts.map((alertItem, i) => (
-            <div key={i} className="flex items-center justify-between gap-4 p-4 border border-slate-100 rounded-xl hover:bg-rose-50 transition-colors cursor-pointer" onClick={() => handleAlertAction(alertItem.label)}>
-              <div className="flex items-center gap-4">
-                <AlertCircle className="text-rose-500" />
-                <span className="font-bold text-base">{alertItem.label}</span>
+            <div key={i} className="flex items-center justify-between gap-4 p-3 sm:p-4 border border-slate-100 rounded-xl hover:bg-rose-50 transition-colors cursor-pointer" onClick={() => handleAlertAction(alertItem.label)}>
+              <div className="flex items-center gap-3 sm:gap-4">
+                <AlertCircle className="text-rose-500 size-5 sm:size-6" />
+                <span className="font-bold text-sm sm:text-base">{alertItem.label}</span>
               </div>
-              <span className="px-2 py-1 bg-rose-100 text-rose-700 rounded-lg text-base font-bold">{alertItem.count} dự án</span>
+              <span className="px-2 py-1 bg-rose-100 text-rose-700 rounded-lg text-xs sm:text-base font-bold">{alertItem.count} dự án</span>
             </div>
           ))}
         </div>

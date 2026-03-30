@@ -127,13 +127,20 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden">
-      <Sidebar activeTab={activeTab} onNavigate={handleNavigate} />
+    <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden relative">
+      <div className={`fixed inset-0 bg-slate-900/50 z-40 lg:hidden transition-opacity ${activeTab === 'sidebar-open' ? 'opacity-100 visible' : 'opacity-0 invisible'}`} onClick={() => setActiveTab('dashboard')} />
+      
+      <div className={`fixed lg:static inset-y-0 left-0 z-50 transform lg:transform-none transition-transform duration-300 ${activeTab === 'sidebar-open' ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        <Sidebar activeTab={activeTab === 'sidebar-open' ? 'dashboard' : activeTab} onNavigate={(tab) => { setActiveTab(tab); }} />
+      </div>
       
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-8 shrink-0">
           <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 lg:hidden">
+            <button 
+              onClick={() => setActiveTab('sidebar-open')}
+              className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 lg:hidden"
+            >
               <Menu size={20} />
             </button>
             <div className="relative group hidden sm:block">
@@ -171,7 +178,7 @@ export default function App() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-8">
+        <main className={`flex-1 overflow-y-auto ${activeTab === 'dashboard-app' ? 'p-0' : 'p-4 sm:p-8'}`}>
           {activeTab === 'dashboard' && (
             <DashboardView 
               projects={projects}
