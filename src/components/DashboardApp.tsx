@@ -1222,7 +1222,6 @@ function DashboardContent({
       const steps = stageDef.steps.map((stepDef, stepIndex) => {
         let stepStatus: 'completed' | 'current' | 'pending' = 'pending';
         let isDelayed = false;
-        let progress = 0;
         let agency = stepDef.agency;
         let stepName = stepDef.name;
 
@@ -1240,7 +1239,6 @@ function DashboardContent({
           
           if (impl && impl.agencyActualDate) {
             stepStatus = 'completed';
-            progress = 100;
             if (milestone && milestone.agency) {
               isDelayed = new Date(impl.agencyActualDate) > new Date(milestone.agency);
             }
@@ -1248,36 +1246,45 @@ function DashboardContent({
             // If it's the current step, or we haven't found the current step yet and this one has no actual date
             stepStatus = 'current';
             foundCurrentStep = true;
-            progress = selectedProject.progress || 50;
             isDelayed = isOverdue;
             agency = selectedProject.currentAgency || stepDef.agency;
           } else if (foundCurrentStep) {
             stepStatus = 'pending';
-            progress = 0;
           } else {
             // Fallback if something is weird
             stepStatus = 'completed';
-            progress = 100;
           }
         } else {
           // Fallback logic for projects without detailed milestones
           if (isCurrentStep) {
             stepStatus = 'current';
             foundCurrentStep = true;
-            progress = selectedProject.progress || 50;
             isDelayed = isOverdue;
             agency = selectedProject.currentAgency || stepDef.agency;
           } else if (!foundCurrentStep) {
             // If we haven't found the current step yet, this step must be completed
             stepStatus = 'completed';
-            progress = 100;
             // Randomly make some previous steps delayed for demo purposes
             isDelayed = (stageIndex + stepIndex) % 4 === 0; 
           } else {
             // If we have already found the current step, this step is pending
             stepStatus = 'pending';
-            progress = 0;
           }
+        }
+
+        // Determine pill style
+        let statusText = 'CHƯA BẮT ĐẦU';
+        let pillClass = 'bg-slate-100 text-slate-400';
+        let StatusIcon = Clock;
+
+        if (stepStatus === 'completed') {
+          statusText = isDelayed ? 'TRỄ HẠN' : 'ĐÚNG HẠN';
+          pillClass = isDelayed ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white';
+          StatusIcon = isDelayed ? AlertCircle : CheckCircle2;
+        } else if (stepStatus === 'current') {
+          statusText = 'ĐANG XỬ LÝ';
+          pillClass = 'bg-blue-600 text-white shadow-sm';
+          StatusIcon = Circle;
         }
 
         return {
@@ -1285,7 +1292,9 @@ function DashboardContent({
           agency,
           isDelayed,
           status: stepStatus,
-          progress,
+          statusText,
+          pillClass,
+          StatusIcon,
           isParallel: stepDef.isParallel
         };
       });
@@ -1406,101 +1415,83 @@ function DashboardContent({
                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest">Sơ đồ Gantt tiến độ chi tiết</h3>
               </div>
               
-              <div className="bg-slate-50 p-4 rounded-3xl border border-slate-100">
-                <div className="space-y-6">
-                  {/* Gantt Header */}
-                  <div className="grid grid-cols-[2fr,1.5fr,1fr] gap-4 text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200 pb-2">
-                    <div>Giai đoạn / Bước xử lý</div>
-                    <div>Cơ quan</div>
-                    <div className="text-right">Trạng thái</div>
-                  </div>
+              <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                  <div className="grid w-full min-w-[800px]" style={{ gridTemplateColumns: '2.5fr 1.5fr 1fr' }}>
+                    {/* Header Row */}
+                    <div className="bg-slate-50/80 p-4 border-r border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200">
+                      GIAI ĐOẠN / BƯỚC XỬ LÝ
+                    </div>
+                    <div className="bg-slate-50/80 p-4 border-r border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200">
+                      CƠ QUAN
+                    </div>
+                    <div className="bg-slate-50/80 p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-200 text-center">
+                      TRẠNG THÁI
+                    </div>
 
-                  {/* Gantt Rows */}
-                  {ganttData.map((stageData, stageIdx) => (
-                    <div key={stageIdx} className="space-y-2">
-                      {stageData.steps.map((step, stepIdx) => (
-                        <div key={stepIdx} className="grid grid-cols-[2fr,1.5fr,1fr] gap-4 items-start group">
-                          <div className="pr-2">
-                            {stepIdx === 0 && (
-                              <p className={`text-[10px] font-black leading-tight mb-1 ${stageData.status === 'current' ? 'text-blue-600' : 'text-slate-800'}`}>
-                                {stageData.stageName}
-                              </p>
-                            )}
-                            <p className={`text-[9px] font-bold leading-tight ${step.status === 'current' ? 'text-blue-500' : 'text-slate-500'} ${stepIdx > 0 ? 'pl-2 border-l-2 border-slate-200 ml-1' : ''}`}>
-                              {step.stepName}
-                            </p>
-                          </div>
-                          
-                          <div>
-                            <p className="text-[9px] font-bold text-slate-500 leading-tight break-words">
-                              {step.agency}
-                            </p>
-                          </div>
+                    {/* Data Rows */}
+                    {ganttData.map((stageData, stageIdx) => (
+                      <React.Fragment key={stageIdx}>
+                        {/* Stage Row - Spans all columns */}
+                        <div className="col-span-3 bg-slate-100/50 p-3 px-4 border-b border-slate-200">
+                          <h4 className={`text-[11px] font-black uppercase tracking-widest ${stageData.status === 'current' ? 'text-blue-600' : 'text-slate-500'}`}>
+                            {stageData.stageName}
+                          </h4>
+                        </div>
 
-                          <div className="space-y-1.5">
-                            <div className="h-6 bg-slate-100 rounded-lg relative overflow-hidden flex items-center shadow-inner">
-                              {/* Progress Bar */}
-                              <motion.div 
-                                initial={{ width: 0 }}
-                                animate={{ width: `${step.progress}%` }}
-                                transition={{ duration: 1, delay: (stageIdx + stepIdx) * 0.1 }}
-                                className={`absolute inset-y-0 left-0 rounded-lg shadow-sm ${
-                                  step.status === 'completed' ? (step.isDelayed ? 'bg-rose-400' : 'bg-emerald-400') : 
-                                  step.status === 'current' ? (step.isDelayed ? 'bg-rose-500' : 'bg-blue-500') : 'bg-slate-200'
-                                }`}
-                              >
-                                {step.status === 'current' && !step.isDelayed && (
-                                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" style={{ backgroundSize: '200% 100%' }}></div>
-                                )}
-                              </motion.div>
-                              
-                              {/* Status Indicator on Bar */}
-                              <div className="relative z-10 w-full px-3 flex justify-end items-center">
-                                <div className="flex items-center gap-1">
-                                  {step.status === 'pending' ? (
-                                    <Clock size={10} className="text-slate-400" />
-                                  ) : step.isDelayed ? (
-                                    <AlertCircle size={10} className={step.progress > 80 ? 'text-white' : 'text-rose-600'} />
-                                  ) : step.status === 'current' ? (
-                                    <Clock size={10} className={step.progress > 80 ? 'text-white' : 'text-blue-600'} />
-                                  ) : (
-                                    <CheckCircle2 size={10} className={step.progress > 80 ? 'text-white' : 'text-emerald-600'} />
-                                  )}
-                                  <span className={`text-[9px] font-black uppercase tracking-tighter ${
-                                    step.status === 'pending' ? 'text-slate-400' :
-                                    step.progress > 80 ? 'text-white' : 
-                                    (step.status === 'current' ? (step.isDelayed ? 'text-rose-600' : 'text-blue-600') : (step.isDelayed ? 'text-rose-600' : 'text-emerald-600'))
-                                  }`}>
-                                    {step.status === 'pending' ? 'Chưa bắt đầu' : step.status === 'current' ? (step.isDelayed ? 'Trễ hạn' : 'Đang xử lý') : (step.isDelayed ? 'Trễ hạn' : 'Đúng hạn')}
-                                  </span>
-                                </div>
+                        {/* Step Rows */}
+                        {stageData.steps.map((step, stepIdx) => (
+                          <React.Fragment key={stepIdx}>
+                            {/* Column 1: Step Name */}
+                            <div className="bg-slate-50/30 p-4 border-r border-slate-100 border-b border-slate-50">
+                              <div className="flex items-start gap-3">
+                                <div className="mt-1 w-1.5 h-1.5 rounded-full bg-slate-300 flex-shrink-0"></div>
+                                <p className="text-[11px] font-bold text-slate-700 leading-tight">
+                                  {step.stepName}
+                                </p>
                               </div>
                             </div>
-                          </div>
-                        </div>
-                      ))}
-                      {stageIdx < ganttData.length - 1 && <div className="h-px bg-slate-100 mx-1"></div>}
-                    </div>
-                  ))}
+                            
+                            {/* Column 2: Agency */}
+                            <div className="p-4 border-r border-slate-100 border-b border-slate-50 flex items-center">
+                              <p className="text-[11px] font-medium text-slate-500 leading-tight">
+                                {step.agency}
+                              </p>
+                            </div>
+                            
+                            {/* Column 3: Status */}
+                            <div className="p-4 border-b border-slate-50 flex items-center justify-center">
+                              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl w-full max-w-[120px] justify-center shadow-sm ${step.pillClass}`}>
+                                <step.StatusIcon size={12} className={step.status === 'current' ? 'fill-blue-600 text-white' : ''} />
+                                <span className="text-[10px] font-black uppercase tracking-tight whitespace-nowrap">
+                                  {step.statusText}
+                                </span>
+                              </div>
+                            </div>
+                          </React.Fragment>
+                        ))}
+                      </React.Fragment>
+                    ))}
+                  </div>
                 </div>
               </div>
               
               <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 justify-center">
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-                  <span className="text-[9px] font-bold text-slate-500 uppercase">Đúng hạn</span>
+                  <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-tight">Đúng hạn</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-rose-500"></div>
-                  <span className="text-[9px] font-bold text-slate-500 uppercase">Trễ hạn</span>
+                  <div className="w-3 h-3 rounded-full bg-rose-500"></div>
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-tight">Trễ hạn</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                  <span className="text-[9px] font-bold text-slate-500 uppercase">Đang xử lý</span>
+                  <div className="w-3 h-3 rounded-full bg-blue-600"></div>
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-tight">Đang xử lý</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-slate-200"></div>
-                  <span className="text-[9px] font-bold text-slate-500 uppercase">Chưa bắt đầu</span>
+                  <div className="w-3 h-3 rounded-full bg-slate-100"></div>
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-tight">Chưa bắt đầu</span>
                 </div>
               </div>
             </section>
