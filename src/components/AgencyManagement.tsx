@@ -6,6 +6,7 @@ export interface Agency {
   id: string;
   name: string;
   departments: string[];
+  displayOrder: number;
 }
 
 interface AgencyManagementProps {
@@ -15,8 +16,10 @@ interface AgencyManagementProps {
 
 export default function AgencyManagement({ agencies, setAgencies }: AgencyManagementProps) {
   const [newAgencyName, setNewAgencyName] = useState('');
+  const [newAgencyDisplayOrder, setNewAgencyDisplayOrder] = useState('');
   const [editingAgencyId, setEditingAgencyId] = useState<string | null>(null);
   const [editAgencyValue, setEditAgencyValue] = useState('');
+  const [editAgencyDisplayOrder, setEditAgencyDisplayOrder] = useState('');
   const [expandedAgencyId, setExpandedAgencyId] = useState<string | null>(null);
   const [newDeptName, setNewDeptName] = useState('');
   const [editingDept, setEditingDept] = useState<{ agencyId: string, index: number, value: string } | null>(null);
@@ -26,10 +29,12 @@ export default function AgencyManagement({ agencies, setAgencies }: AgencyManage
       const newAgency: Agency = {
         id: Date.now().toString(),
         name: newAgencyName.trim(),
-        departments: []
+        departments: [],
+        displayOrder: parseInt(newAgencyDisplayOrder) || 0
       };
       setAgencies([...agencies, newAgency]);
       setNewAgencyName('');
+      setNewAgencyDisplayOrder('');
     }
   };
 
@@ -40,10 +45,11 @@ export default function AgencyManagement({ agencies, setAgencies }: AgencyManage
   const startEditAgency = (agency: Agency) => {
     setEditingAgencyId(agency.id);
     setEditAgencyValue(agency.name);
+    setEditAgencyDisplayOrder(agency.displayOrder.toString());
   };
 
   const saveEditAgency = (id: string) => {
-    setAgencies(agencies.map(a => a.id === id ? { ...a, name: editAgencyValue } : a));
+    setAgencies(agencies.map(a => a.id === id ? { ...a, name: editAgencyValue, displayOrder: parseInt(editAgencyDisplayOrder) || 0 } : a));
     setEditingAgencyId(null);
   };
 
@@ -104,6 +110,15 @@ export default function AgencyManagement({ agencies, setAgencies }: AgencyManage
             className="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-lg" 
           />
         </div>
+        <div className="relative w-32">
+          <input 
+            type="number" 
+            value={newAgencyDisplayOrder}
+            onChange={(e) => setNewAgencyDisplayOrder(e.target.value)}
+            placeholder="Thứ tự..." 
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-lg" 
+          />
+        </div>
         <button 
           onClick={handleAddAgency}
           className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold flex items-center gap-2 hover:bg-blue-700 transition-colors shadow-lg shadow-blue-900/10 text-lg"
@@ -125,13 +140,21 @@ export default function AgencyManagement({ agencies, setAgencies }: AgencyManage
                 </button>
                 
                 {editingAgencyId === agency.id ? (
-                  <input 
-                    type="text" 
-                    value={editAgencyValue}
-                    onChange={(e) => setEditAgencyValue(e.target.value)}
-                    className="flex-1 px-3 py-1.5 border border-blue-300 rounded-lg outline-none text-lg"
-                    autoFocus
-                  />
+                  <div className="flex gap-2 flex-1">
+                    <input 
+                      type="text" 
+                      value={editAgencyValue}
+                      onChange={(e) => setEditAgencyValue(e.target.value)}
+                      className="flex-1 px-3 py-1.5 border border-blue-300 rounded-lg outline-none text-lg"
+                      autoFocus
+                    />
+                    <input 
+                      type="number" 
+                      value={editAgencyDisplayOrder}
+                      onChange={(e) => setEditAgencyDisplayOrder(e.target.value)}
+                      className="w-20 px-3 py-1.5 border border-blue-300 rounded-lg outline-none text-lg"
+                    />
+                  </div>
                 ) : (
                   <div className="flex flex-col">
                     <span className="font-bold text-slate-800 text-lg">{agency.name}</span>

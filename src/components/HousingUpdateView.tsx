@@ -8,6 +8,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { calculateProjectStatus } from '../lib/projectUtils';
 
 // --- Types ---
 import { Process, ParentStep, ChildStep } from './StepManagementView';
@@ -260,13 +261,28 @@ export default function HousingUpdateView({
       updatedProject.stepStatuses[activeStepId] = 'Hoàn thành';
     }
 
+    // 4. Recalculate project-level status using utility
+    const { progress, currentStep, status, currentAgency, childStep, parentStep } = calculateProjectStatus(
+      updatedProject.milestones || {}, 
+      updatedProject.processId, 
+      processes,
+      updatedProject.implementationPlan || {}
+    );
+
+    updatedProject.progress = progress;
+    updatedProject.currentStep = currentStep;
+    updatedProject.status = status;
+    updatedProject.currentAgency = currentAgency;
+    updatedProject.childStep = childStep;
+    updatedProject.parentStep = parentStep;
+
     setTimeout(() => {
       setIsSaving(false);
       setProject(updatedProject);
       if (onSuccess) {
         onSuccess(updatedProject);
       }
-      alert('Cập nhật tiến độ thành công!');
+      // alert('Cập nhật tiến độ thành công!'); // Removed alert as per guidelines
       // Reset form
       setNextStepIds([]);
       setProcessingContent('');
@@ -360,7 +376,7 @@ export default function HousingUpdateView({
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               <div className="lg:col-span-8 space-y-6">
                 <div className="space-y-1">
-                  <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Tên bước cha</p>
+                  <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Tên thủ tục</p>
                   <p className="text-2xl font-black text-slate-900 leading-tight tracking-tight">{activeStep?.name}</p>
                 </div>
                 

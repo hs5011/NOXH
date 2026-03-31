@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Building2, MapPin, Calendar, Info, FileText, DollarSign, Maximize, Users, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { formatDate } from '../lib/projectUtils';
 
 interface ProjectDetailProps {
   project: any;
@@ -188,7 +189,7 @@ export default function ProjectDetail({ project, onClose }: ProjectDetailProps) 
                 <div>
                   <p className="text-base uppercase font-bold opacity-60">Thời hạn xử lý</p>
                   <p className="text-lg font-bold flex items-center gap-2">
-                    <Clock size={16} /> {project.deadline}
+                    <Clock size={16} /> {formatDate(project.deadline)}
                   </p>
                 </div>
               </div>
@@ -201,8 +202,8 @@ export default function ProjectDetail({ project, onClose }: ProjectDetailProps) 
               <h4 className="text-base font-bold uppercase tracking-widest opacity-60 mb-4">Nhật ký xử lý</h4>
               <div className="space-y-4">
                 {[
-                  { date: '12/03', action: 'Tiếp nhận hồ sơ', user: 'Admin' },
-                  { date: '14/03', action: 'Thẩm định bước 1', user: 'SXD' },
+                  { date: '12/03/2024', action: 'Tiếp nhận hồ sơ', user: 'Admin' },
+                  { date: '14/03/2024', action: 'Thẩm định bước 1', user: 'SXD' },
                 ].map((log, i) => (
                   <div key={i} className="flex gap-3 text-lg">
                     <span className="text-slate-500 font-mono">{log.date}</span>

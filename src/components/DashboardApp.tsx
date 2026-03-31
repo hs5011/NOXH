@@ -8,6 +8,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { PROJECT_REGIONS } from '../constants';
 import { INITIAL_PROCESSES } from '../data/appData';
+import { formatDate } from '../lib/projectUtils';
 
 // --- Types ---
 interface Agency {
@@ -152,17 +153,7 @@ function DashboardContent({
   };
 
   const dynamicAgencies = [
-    {
-      id: 'investor-stat',
-      name: 'Chủ đầu tư',
-      count: globalFilteredProjects.filter(p => p.currentAgency === 'Chủ đầu tư').length,
-      delayedCount: globalFilteredProjects.filter(p => p.currentAgency === 'Chủ đầu tư' && (p.status === 'Delayed' || p.status === 'Warning')).length,
-      subtext: 'dự án đang xử lý',
-      color: 'bg-emerald-50',
-      iconColor: 'text-emerald-500',
-      departments: []
-    },
-    ...processingAgencies.map(a => {
+    ...[...processingAgencies].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)).map(a => {
       const agencyProjects = globalFilteredProjects.filter(p => p.currentAgency === a.name);
       const count = agencyProjects.length;
       const delayedCount = agencyProjects.filter(p => p.status === 'Delayed' || p.status === 'Warning').length;
@@ -174,7 +165,17 @@ function DashboardContent({
         color: 'bg-emerald-50',
         iconColor: 'text-emerald-500'
       };
-    })
+    }),
+    {
+      id: 'investor-stat',
+      name: 'Chủ đầu tư',
+      count: globalFilteredProjects.filter(p => p.currentAgency === 'Chủ đầu tư').length,
+      delayedCount: globalFilteredProjects.filter(p => p.currentAgency === 'Chủ đầu tư' && (p.status === 'Delayed' || p.status === 'Warning')).length,
+      subtext: 'dự án đang xử lý',
+      color: 'bg-emerald-50',
+      iconColor: 'text-emerald-500',
+      departments: []
+    }
   ];
 
   const dynamicDepartments = selectedAgency ? (selectedAgency.name.includes('Phường xã') ? Array.from(new Set(locations.map(l => l.ward))) : selectedAgency.departments)
@@ -1019,7 +1020,7 @@ function DashboardContent({
                   <span className="text-slate-300">•</span>
                   <span>{p.currentAgency}</span>
                   <span className="text-slate-300">•</span>
-                  <span className="text-rose-500">{p.deadline}</span>
+                  <span className="text-rose-500">{formatDate(p.deadline)}</span>
                 </div>
               </motion.button>
             )) : (
@@ -1106,7 +1107,7 @@ function DashboardContent({
                   <span className="text-slate-300">•</span>
                   <span>{p.currentAgency}</span>
                   <span className="text-slate-300">•</span>
-                  <span className="text-rose-500">{p.deadline}</span>
+                  <span className="text-rose-500">{formatDate(p.deadline)}</span>
                 </div>
               </motion.button>
             )) : (
@@ -1358,7 +1359,7 @@ function DashboardContent({
                   <div className="flex justify-between items-start md:block">
                     <div>
                       <p className="text-[10px] font-black text-blue-100 uppercase tracking-widest mb-1">Thời hạn xử lý</p>
-                      <p className="text-base font-bold leading-tight">{selectedProject.stepDeadline || selectedProject.deadline}</p>
+                      <p className="text-base font-bold leading-tight">{formatDate(selectedProject.stepDeadline || selectedProject.deadline)}</p>
                     </div>
                     {selectedProject.delayDays && selectedProject.delayDays > 0 && (
                       <div className="bg-rose-500 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest mt-2 md:mt-2 md:inline-block">
@@ -1490,7 +1491,7 @@ function DashboardContent({
                     <p className="text-[10px] text-slate-500 font-medium mt-1">{selectedProject.currentAgency}</p>
                     <div className="flex items-center gap-2 mt-2">
                       <span className="text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 uppercase">Đang xử lý</span>
-                      <span className="text-[9px] font-bold text-slate-400">{selectedProject.deadline}</span>
+                      <span className="text-[9px] font-bold text-slate-400">{formatDate(selectedProject.deadline)}</span>
                     </div>
                   </div>
                 </div>

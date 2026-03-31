@@ -15,7 +15,7 @@ const allTasks = [
     id: '2',
     title: 'Rà soát pháp lý đất đai',
     project: 'Chung cư An Bình',
-    from: 'Sở Tài nguyên và Môi trường (Chi cục Quản lý đất đai)',
+    from: 'Sở NNMT (Chi cục Quản lý đất đai)',
     deadline: 'Còn 5 ngày',
     priority: 'Medium',
     status: 'Pending'

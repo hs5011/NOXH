@@ -1,6 +1,6 @@
 import { Project, AgencyStats, WorkflowStep } from './types';
 
-export const PROJECT_STAGES = ['Chuẩn bị đầu tư', 'Thực hiện đầu tư', 'Kết thúc đầu tư', 'Hoàn thành'];
+export const PROJECT_STAGES = ['CHUẨN BỊ ĐẦU TƯ', 'THỰC HIỆN ĐẦU TƯ', 'KẾT THÚC ĐẦU TƯ', 'Hoàn thành'];
 export const PROJECT_STEPS_DTC = [
   'Chấp thuận chủ trương đầu tư',
   'Quy hoạch chi tiết 1/500',

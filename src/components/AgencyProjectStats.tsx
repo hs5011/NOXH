@@ -23,6 +23,7 @@ interface Agency {
   id: string;
   name: string;
   departments: string[];
+  displayOrder: number;
 }
 
 interface AgencyProjectStatsProps {
@@ -78,10 +79,7 @@ export default function AgencyProjectStats({ projects: initialProjects = [], pro
   };
 
   const getDepartmentStats = (agencyName: string, deptName: string) => {
-    const deptProjects = projects.filter(p => {
-      if (agencyName === '168 Phường xã') return p.location.includes(deptName);
-      return p.currentAgency === agencyName && p.currentDepartment === deptName;
-    });
+    const deptProjects = projects.filter(p => p.currentAgency === agencyName && p.currentDepartment === deptName);
     const delayed = deptProjects.filter(p => p.status === 'Delayed' || p.status === 'Warning').length;
     return {
       total: deptProjects.length,
@@ -104,7 +102,6 @@ export default function AgencyProjectStats({ projects: initialProjects = [], pro
     if (view === 'projects') {
       if (selectedInvestor) return p.investor === selectedInvestor;
       if (selectedDepartment) {
-        if (selectedAgency?.name === '168 Phường xã') return p.location.includes(selectedDepartment);
         return p.currentAgency === selectedAgency?.name && p.currentDepartment === selectedDepartment;
       }
       return p.currentAgency === selectedAgency?.name;
@@ -226,7 +223,7 @@ export default function AgencyProjectStats({ projects: initialProjects = [], pro
                 </div>
               </button>
 
-              {processingAgencies.map((agency) => {
+              {[...processingAgencies].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)).map((agency) => {
                 const stats = getAgencyStats(agency.name);
                 return (
                   <div
@@ -254,7 +251,7 @@ export default function AgencyProjectStats({ projects: initialProjects = [], pro
                           <button 
                             onClick={() => {
                               setSelectedAgency(agency);
-                              if (agency.name === '168 Phường xã') {
+                              if (agency.departments && agency.departments.length > 0) {
                                 setView('departments');
                               } else {
                                 setView('projects');
@@ -268,7 +265,7 @@ export default function AgencyProjectStats({ projects: initialProjects = [], pro
                           <button 
                             onClick={() => {
                               setSelectedAgency(agency);
-                              if (agency.name === '168 Phường xã') {
+                              if (agency.departments && agency.departments.length > 0) {
                                 setView('departments');
                               } else {
                                 setView('projects');

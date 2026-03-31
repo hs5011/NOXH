@@ -81,7 +81,7 @@ export default function ProjectList({
       } else if (filter.isKeyProject) {
         filtered = initialProjects.filter((p: any) => p.isKeyProject);
       } else if (filter.step) {
-        filtered = initialProjects.filter((p: any) => p.currentStep === filter.step);
+        filtered = initialProjects.filter((p: any) => p.childStep === filter.step || p.currentStep === filter.step);
       } else if (filter.alert) {
         filtered = initialProjects.filter((p: any) => p.status === 'Delayed' || p.alert === filter.alert);
       } else if (filter.region) {
@@ -135,27 +135,37 @@ export default function ProjectList({
       });
     });
 
-    const activeSteps = allSteps.filter(s => !s.actualDate);
+    const noStepsCompleted = allSteps.every(step => !step.actualDate);
+    const activeSteps = allSteps.filter(s => {
+      if (s.actualDate) return false;
+      
+      // A step is active if it has a milestone date
+      const hasMilestone = !!s.investorDeadline || !!s.agencyDeadline;
+      if (hasMilestone) return true;
+      
+      // Or if it's the very first step and no steps are completed yet
+      const isFirstStep = s.id === allSteps[0]?.id;
+      if (noStepsCompleted && isFirstStep) return true;
+      
+      return false;
+    });
     
-    // If project has more than 2 steps in total, show all active steps
-    // Otherwise show only the first active step
-    if (allSteps.length > 2) {
-      if (activeSteps.length === 0 && allSteps.length > 0) {
-        return [allSteps[allSteps.length - 1]];
-      }
-      return activeSteps;
-    } else {
-      if (activeSteps.length > 0) return [activeSteps[0]];
-      if (allSteps.length > 0) return [allSteps[allSteps.length - 1]];
-      return [];
+    if (activeSteps.length === 0 && allSteps.length > 0) {
+      // If all steps are completed, show the last one
+      return [allSteps[allSteps.length - 1]];
     }
+    return activeSteps;
   };
 
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '-';
     try {
       const date = new Date(dateStr);
-      return date.toLocaleDateString('vi-VN');
+      if (isNaN(date.getTime())) return dateStr;
+      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
     } catch (e) {
       return dateStr;
     }
@@ -179,7 +189,7 @@ export default function ProjectList({
     const headers = ['Mã dự án', 'Tên dự án', 'Chủ đầu tư', 'Quy trình', 'Nguồn vốn', 'Hạn chót'];
     const csvContent = [
       headers.join(','),
-      ...filteredProjects.map(p => [p.code, `"${p.name}"`, `"${p.investor}"`, p.processId, p.fundingSource, p.deadline].join(','))
+      ...filteredProjects.map(p => [p.code, `"${p.name}"`, `"${p.investor}"`, p.processId, p.fundingSource, formatDate(p.deadline)].join(','))
     ].join('\n');
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });

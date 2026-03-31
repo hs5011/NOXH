@@ -20,6 +20,7 @@ interface Project {
   location: string;
   stage: string;
   currentStep: string;
+  childStep?: string;
   progress: number;
   status: string;
   deadline: string;
@@ -78,9 +79,9 @@ export default function GanttDashboardNOXH({ projects: initialProjects = [], rep
         const isCurrent = mIdx === (pIdx % 3 + 1);
         
         details[m] = {
-          investorDate: isPast ? '23/10/25' : isCurrent ? '24/02/26' : '',
+          investorDate: isPast ? '23/10/2025' : isCurrent ? '24/02/2026' : '',
           investorStatus: isPast ? 'done' : isCurrent ? 'doing' : 'pending',
-          agencyDate: isPast ? '22/05/29' : isCurrent ? '18/03/26' : '',
+          agencyDate: isPast ? '22/05/2029' : isCurrent ? '18/03/2026' : '',
           agencyStatus: isPast ? (mIdx === 0 && pIdx === 0 ? 'delayed' : 'done') : isCurrent ? 'doing' : 'pending'
         };
       });
@@ -376,7 +377,7 @@ export default function GanttDashboardNOXH({ projects: initialProjects = [], rep
                           {p.stage}
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-500 italic">Bước hiện tại: {p.currentStep}</p>
+                      <p className="text-[11px] text-slate-500 italic">Bước hiện tại: {p.childStep || p.currentStep}</p>
                     </div>
                   </td>
                   <td className="px-4 py-6 border-r border-b border-slate-100">
@@ -427,7 +428,7 @@ export default function GanttDashboardNOXH({ projects: initialProjects = [], rep
                     <span className="text-sm font-bold text-slate-700">{formatDisplayDate(p.deadline)}</span>
                   </td>
                   <td className="px-4 py-6 border-b border-slate-100 text-center">
-                    <span className="text-xs font-medium text-slate-600">{p.textProgress}</span>
+                    <span className="text-xs font-medium text-slate-600">{p.currentStep || p.textProgress}</span>
                   </td>
                 </tr>
               ))}

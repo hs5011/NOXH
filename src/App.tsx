@@ -186,6 +186,7 @@ export default function App() {
               onNavigateToProjects={handleNavigateToProjects}
               processingAgencies={processingAgencies}
               projectStages={projectStages}
+              processes={processes}
             />
           )}
           {activeTab === 'dashboard-app' && (

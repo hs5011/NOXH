@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { X, Save, Building2, MapPin, User, Calendar, Info, FileText, Upload, Trash2, DollarSign, Maximize, Users, Plus, Download } from 'lucide-react';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import { vi } from 'date-fns/locale';
@@ -9,6 +9,7 @@ registerLocale('vi', vi);
 
 import { Agency } from './AgencyManagement';
 import { Process } from './StepManagementView';
+import { calculateProjectStatus } from '../lib/projectUtils';
 
 interface Location {
   ward: string;
@@ -79,7 +80,8 @@ export default function CreateProject({
     processId: project?.processId || '',
     follower: project?.follower || '',
     // Detailed Milestones
-    milestones: project?.milestones || {}
+    milestones: project?.milestones || {},
+    implementationPlan: project?.implementationPlan || {}
   });
   
   const [files, setFiles] = useState<LegalFile[]>(project?.files || []);
@@ -87,6 +89,25 @@ export default function CreateProject({
   const [activeTab, setActiveTab] = useState<'general' | 'legal'>('general');
   const [activeMilestoneFiles, setActiveMilestoneFiles] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!isEdit && formData.processId && Object.keys(formData.milestones).length === 0) {
+      const selectedProcess = processes.find(p => p.id === formData.processId);
+      if (selectedProcess && selectedProcess.parentSteps.length > 0 && selectedProcess.parentSteps[0].childSteps.length > 0) {
+        const firstStepId = selectedProcess.parentSteps[0].childSteps[0].id;
+        const today = new Date().toISOString().split('T')[0];
+        setFormData(prev => ({
+          ...prev,
+          milestones: {
+            [firstStepId]: {
+              agency: today,
+              investor: today
+            }
+          }
+        }));
+      }
+    }
+  }, [formData.processId, isEdit, processes]);
 
   const getStepName = (stepId: string) => {
     const process = processes.find(p => p.id === formData.processId);
@@ -98,55 +119,6 @@ export default function CreateProject({
       if (cs) return cs.name;
     }
     return 'N/A';
-  };
-
-  const calculateProjectStatus = (milestones: any, processId: string) => {
-    const selectedProcess = processes.find(p => p.id === processId);
-    if (!selectedProcess) return { progress: 0, currentStep: 'Chưa chọn quy trình', status: 'On Track', currentAgency: '' };
-
-    const allSteps: { id: string, name: string, agency?: string }[] = [];
-    selectedProcess.parentSteps.forEach(ps => {
-      allSteps.push({ id: ps.id, name: ps.name });
-      ps.childSteps.forEach(cs => {
-        allSteps.push({ id: cs.id, name: cs.name, agency: cs.agency });
-      });
-    });
-    
-    let completedCount = 0;
-    let currentStep = 'Khởi tạo hồ sơ';
-    let status = 'On Track';
-    let currentAgency = '';
-
-    for (const step of allSteps) {
-      const m = milestones[step.id];
-      // A step is considered completed if it has an actual completion date
-      if (m?.actualDate) {
-        completedCount++;
-        continue;
-      }
-      
-      // If not completed, this is the current step
-      currentStep = step.name;
-      currentAgency = step.agency || 'Chủ đầu tư';
-      
-      // Check for delays
-      const deadline = m?.agency || m?.investor;
-      if (deadline) {
-        const deadlineDate = new Date(deadline);
-        if (new Date() > deadlineDate) {
-          status = 'Delayed';
-        }
-      }
-      break;
-    }
-
-    const progress = allSteps.length > 0 ? Math.round((completedCount / allSteps.length) * 100) : 0;
-    if (progress === 100) {
-      currentStep = 'Hoàn thành';
-      currentAgency = 'N/A';
-    }
-
-    return { progress, currentStep, status, currentAgency };
   };
 
   const handleMilestoneChange = (key: string, type: 'investor' | 'agency' | 'actualDate', value: string) => {
@@ -168,7 +140,7 @@ export default function CreateProject({
       name: file.name,
       type: file.name.split('.').pop()?.toUpperCase() || 'FILE',
       size: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
-      date: new Date().toLocaleDateString('vi-VN'),
+      date: `${String(new Date().getDate()).padStart(2, '0')}/${String(new Date().getMonth() + 1).padStart(2, '0')}/${new Date().getFullYear()}`,
       milestoneKey
     };
     setFiles([...files, newFile]);
@@ -188,7 +160,7 @@ export default function CreateProject({
     e.preventDefault();
     setSubmitting(true);
     
-    const { progress, currentStep, status, currentAgency } = calculateProjectStatus(formData.milestones, formData.processId);
+    const { progress, currentStep, status, currentAgency, childStep, parentStep } = calculateProjectStatus(formData.milestones, formData.processId, processes, formData.implementationPlan || {});
 
     // Simulate delay
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -201,6 +173,8 @@ export default function CreateProject({
       status,
       currentStep,
       currentAgency,
+      childStep,
+      parentStep,
       deadline: formData.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     };
 

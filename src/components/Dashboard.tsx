@@ -35,7 +35,10 @@ export default function DashboardView({ projects: initialProjects = [], onCreate
   const totalProjects = projects.length;
   const treHan = projects.filter(p => p.status === 'Delayed' || p.status === 'Warning').length;
 
-  const dynamicKpis = projectStages.map((stage: string, index: number) => {
+  // Filter stages to only include the 3 main NOXH process stages for KPIs and Pie chart
+  const noxhProcessStages = projectStages.filter((s: string) => s !== 'Hoàn thành');
+
+  const dynamicKpis = noxhProcessStages.map((stage: string, index: number) => {
     const count = projects.filter(p => p.stage === stage).length;
     const colors = [
       { bg: 'bg-amber-50', text: 'text-amber-600' },
@@ -61,7 +64,7 @@ export default function DashboardView({ projects: initialProjects = [], onCreate
     { label: 'Quá hạn', value: treHan, icon: AlertCircle, color: { bg: 'bg-rose-50', text: 'text-rose-600' } },
   ];
 
-  const stageData = projectStages.map((stage: string) => ({
+  const stageData = noxhProcessStages.map((stage: string) => ({
     name: stage,
     value: projects.filter(p => p.stage === stage).length
   })).filter((d: any) => d.value > 0);
@@ -81,8 +84,9 @@ export default function DashboardView({ projects: initialProjects = [], onCreate
   // Danh sách bước đang tắc (Top 4 steps with most projects)
   const stepCounts: Record<string, number> = {};
   projects.forEach(p => {
-    if (p.currentStep && p.stage !== 'Hoàn thành') {
-      stepCounts[p.currentStep] = (stepCounts[p.currentStep] || 0) + 1;
+    const stepName = p.childStep || p.currentStep;
+    if (stepName && p.stage !== 'Hoàn thành') {
+      stepCounts[stepName] = (stepCounts[stepName] || 0) + 1;
     }
   });
   const stuckSteps = Object.entries(stepCounts)
@@ -125,23 +129,17 @@ export default function DashboardView({ projects: initialProjects = [], onCreate
           <h2 className="text-2xl sm:text-4xl font-bold text-slate-900 tracking-tight">Điều hành Dự án NOXH</h2>
           <p className="text-slate-500 text-sm sm:text-lg mt-1">Tổng hợp dữ liệu tiến độ thực hiện các dự án Nhà ở xã hội TP.HCM</p>
         </div>
-        <button 
-          onClick={onCreateClick}
-          className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white rounded-2xl text-sm sm:text-base font-bold shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all"
-        >
-          Khởi tạo dự án
-        </button>
       </div>
 
       {/* KPI SUMMARY */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         {kpis.map((kpi, i) => <StatCard key={i} {...kpi} />)}
       </div>
 
       {/* Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
         <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <h3 className="font-bold text-lg sm:text-xl text-slate-900 mb-4 sm:mb-6">Phân bổ dự án theo giai đoạn</h3>
+          <h3 className="font-bold text-lg sm:text-xl text-slate-900 mb-4 sm:mb-6 uppercase tracking-tight">Phân bổ dự án theo quy trình NOXH</h3>
           <div className="h-[250px] sm:h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -169,44 +167,6 @@ export default function DashboardView({ projects: initialProjects = [], onCreate
         </div>
       </div>
 
-      {/* Row 2: Danh sách dự án cần theo dõi */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
-        <h3 className="font-bold text-lg sm:text-xl text-slate-900 mb-4 sm:mb-6">Danh sách dự án cần theo dõi</h3>
-        <div className="overflow-x-auto -mx-4 sm:mx-0">
-          <table className="w-full text-sm sm:text-base min-w-[600px] sm:min-w-0">
-            <thead>
-              <tr className="text-slate-400 text-xs sm:text-base uppercase text-left">
-                <th className="pb-4 px-4 sm:px-0">Mã dự án</th>
-                <th className="pb-4">Tên dự án</th>
-                <th className="pb-4 hidden sm:table-cell">Bước hiện tại</th>
-                <th className="pb-4 hidden md:table-cell">Cơ quan xử lý</th>
-                <th className="pb-4">% Hoàn thành</th>
-                <th className="pb-4">Trạng thái</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {watchProjects.length > 0 ? watchProjects.map(p => (
-                <tr key={p.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => onNavigateToProjects({ id: p.id })}>
-                  <td className="py-3 sm:py-4 px-4 sm:px-0 font-bold">{p.code}</td>
-                  <td className="py-3 sm:py-4 truncate max-w-[150px] sm:max-w-[200px]" title={p.name}>{p.name}</td>
-                  <td className="py-3 sm:py-4 hidden sm:table-cell">{p.currentStep}</td>
-                  <td className="py-3 sm:py-4 hidden md:table-cell">{p.currentAgency}</td>
-                  <td className="py-3 sm:py-4">{p.progress}%</td>
-                  <td className="py-3 sm:py-4">
-                    <span className={`px-2 py-0.5 sm:py-1 rounded-lg text-[10px] sm:text-sm font-bold uppercase ${p.status === 'Delayed' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>
-                      {p.status === 'Delayed' ? 'Quá hạn' : 'Cảnh báo'}
-                    </span>
-                  </td>
-                </tr>
-              )) : (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-500">Không có dự án nào cần theo dõi đặc biệt</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
 
       {/* Row 3: Gantt Chart */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
@@ -293,21 +253,6 @@ export default function DashboardView({ projects: initialProjects = [], onCreate
         </div>
       </div>
 
-      {/* Row 5: Cảnh báo hệ thống */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
-        <h3 className="font-bold text-lg sm:text-xl text-slate-900 mb-4 sm:mb-6">Cảnh báo hệ thống</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-          {alerts.map((alertItem, i) => (
-            <div key={i} className="flex items-center justify-between gap-4 p-3 sm:p-4 border border-slate-100 rounded-xl hover:bg-rose-50 transition-colors cursor-pointer" onClick={() => handleAlertAction(alertItem.label)}>
-              <div className="flex items-center gap-3 sm:gap-4">
-                <AlertCircle className="text-rose-500 size-5 sm:size-6" />
-                <span className="font-bold text-sm sm:text-base">{alertItem.label}</span>
-              </div>
-              <span className="px-2 py-1 bg-rose-100 text-rose-700 rounded-lg text-xs sm:text-base font-bold">{alertItem.count} dự án</span>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
