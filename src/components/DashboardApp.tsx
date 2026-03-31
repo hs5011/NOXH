@@ -178,9 +178,9 @@ function DashboardContent({
     }
   ];
 
-  const dynamicDepartments = selectedAgency ? (selectedAgency.name.includes('Phường xã') ? Array.from(new Set(locations.map(l => l.ward))) : selectedAgency.departments)
+  const dynamicDepartments = selectedAgency ? (selectedAgency.name.includes('Phường xã') || selectedAgency.name.includes('Phường/Xã') || selectedAgency.name.includes('UBND cấp xã, phường') ? Array.from(new Set(locations.map(l => l.ward))) : selectedAgency.departments)
     .map((deptName: string, index: number) => {
-      const isWardView = selectedAgency.name.includes('Phường xã') || selectedAgency.name.includes('Phường/Xã');
+      const isWardView = selectedAgency.name.includes('Phường xã') || selectedAgency.name.includes('Phường/Xã') || selectedAgency.name.includes('UBND cấp xã, phường');
       
       // If ward view, check if it matches the location filter
       if (isWardView && filterLocation) {
@@ -217,9 +217,9 @@ function DashboardContent({
     setStatusFilter(status);
     
     // Special cases: Sở Xây dựng and 168 Phường/Xã go to departments/wards
-    const isSpecialAgency = agency.name.includes('Sở Xây dựng') || agency.name.includes('Phường xã') || agency.name.includes('Phường/Xã');
+    const isSpecialAgency = agency.name.includes('Sở Xây dựng') || agency.name.includes('Phường xã') || agency.name.includes('Phường/Xã') || agency.name.includes('UBND cấp xã, phường');
     
-    if (isSpecialAgency && agency.departments && agency.departments.length > 0) {
+    if (isSpecialAgency && (agency.departments && agency.departments.length > 0 || agency.name.includes('UBND cấp xã, phường'))) {
       setView('departments');
     } else {
       setView('projects');
@@ -498,14 +498,14 @@ function DashboardContent({
 
                   return (
                     <div key={stage.name} className={index !== 0 ? "pt-3 border-t border-slate-100" : ""}>
-                      <p className="text-xs font-black text-slate-800 uppercase tracking-tight mb-2">{stage.name}</p>
+                      <p className="text-sm font-black text-slate-800 leading-tight line-clamp-2 mb-2">{stage.name}</p>
                       <div className="grid grid-cols-3 gap-2">
                         <motion.button
                           whileTap={{ scale: 0.98 }}
                           onClick={() => handleStageClick(stage.dataName, 'all')}
                           className="bg-blue-50 p-1.5 rounded-xl border border-blue-100 flex flex-col items-center"
                         >
-                          <span className="text-sm sm:text-base font-black text-blue-700 leading-none">{total}</span>
+                          <span className="text-xl font-black text-blue-700 tracking-tighter leading-none">{total}</span>
                           <span className="text-[7px] sm:text-[8px] font-black text-blue-400 uppercase tracking-widest mt-0.5">Tổng</span>
                         </motion.button>
                         <motion.button
@@ -513,7 +513,7 @@ function DashboardContent({
                           onClick={() => handleStageClick(stage.dataName, 'delayed')}
                           className="bg-rose-50 p-1.5 rounded-xl border border-rose-100 flex flex-col items-center"
                         >
-                          <span className="text-sm sm:text-base font-black text-rose-700 leading-none">{delayed}</span>
+                          <span className="text-xl font-black text-rose-700 tracking-tighter leading-none">{delayed}</span>
                           <span className="text-[7px] sm:text-[8px] font-black text-rose-400 uppercase tracking-widest mt-0.5">Quá hạn</span>
                         </motion.button>
                         <motion.button
@@ -521,7 +521,7 @@ function DashboardContent({
                           onClick={() => handleStageClick(stage.dataName, 'ontime')}
                           className="bg-emerald-50 p-1.5 rounded-xl border border-emerald-100 flex flex-col items-center"
                         >
-                          <span className="text-sm sm:text-base font-black text-emerald-700 leading-none">{ontime}</span>
+                          <span className="text-xl font-black text-emerald-700 tracking-tighter leading-none">{ontime}</span>
                           <span className="text-[7px] sm:text-[8px] font-black text-emerald-400 uppercase tracking-widest mt-0.5">Còn hạn</span>
                         </motion.button>
                       </div>
@@ -645,7 +645,7 @@ function DashboardContent({
         </button>
       </div>
 
-      <FilterPanel hideInvestorAndStage={selectedAgency?.name.includes('Phường xã') || selectedAgency?.name.includes('Phường/Xã')} />
+      <FilterPanel hideInvestorAndStage={selectedAgency?.name.includes('Phường xã') || selectedAgency?.name.includes('Phường/Xã') || selectedAgency?.name.includes('UBND cấp xã, phường')} />
 
       <div className="flex-1 -mt-8 bg-white rounded-t-[32px] p-6 shadow-2xl overflow-y-auto">
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2">
@@ -1020,7 +1020,7 @@ function DashboardContent({
                   <span className="text-slate-300">•</span>
                   <span>{p.currentAgency}</span>
                   <span className="text-slate-300">•</span>
-                  <span className="text-rose-500">{formatDate(p.deadline)}</span>
+                  <span className="text-slate-500 font-bold">{formatDate(p.stepDeadline || p.deadline)}</span>
                 </div>
               </motion.button>
             )) : (
@@ -1107,7 +1107,7 @@ function DashboardContent({
                   <span className="text-slate-300">•</span>
                   <span>{p.currentAgency}</span>
                   <span className="text-slate-300">•</span>
-                  <span className="text-rose-500">{formatDate(p.deadline)}</span>
+                  <span className="text-slate-500 font-bold">{formatDate(p.stepDeadline || p.deadline)}</span>
                 </div>
               </motion.button>
             )) : (
@@ -1152,7 +1152,7 @@ function DashboardContent({
         {
           stage: 'CHUẨN BỊ ĐẦU TƯ',
           steps: [
-            { name: 'Chấp thuận chủ trương đầu tư / lựa chọn chủ đầu tư', agency: 'Sở Kế hoạch & Đầu tư' },
+            { name: 'Chấp thuận chủ trương đầu tư / lựa chọn chủ đầu tư', agency: 'Sở Quy hoạch Kiến trúc' },
             { name: 'Lấy ý kiến các sở ngành', agency: 'Các Sở ngành liên quan', isParallel: true },
             { name: 'Thẩm định báo cáo nghiên cứu khả thi', agency: 'Sở Xây dựng' },
             { name: 'Phê duyệt chủ trương đầu tư', agency: 'UBND Tỉnh' }
@@ -1491,7 +1491,7 @@ function DashboardContent({
                     <p className="text-[10px] text-slate-500 font-medium mt-1">{selectedProject.currentAgency}</p>
                     <div className="flex items-center gap-2 mt-2">
                       <span className="text-[9px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 uppercase">Đang xử lý</span>
-                      <span className="text-[9px] font-bold text-slate-400">{formatDate(selectedProject.deadline)}</span>
+                      <span className="text-[9px] font-bold text-slate-400">{formatDate(selectedProject.stepDeadline || selectedProject.deadline)}</span>
                     </div>
                   </div>
                 </div>
