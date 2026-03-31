@@ -60,13 +60,13 @@ interface DashboardAppProps {
   locations?: any[];
 }
 
-export default function DashboardApp({ 
-  projects: initialProjects = [],
-  processingAgencies = [], 
-  investors = [], 
-  projectStages = [], 
-  locations = [] 
-}: DashboardAppProps) {
+export default function DashboardApp(props: DashboardAppProps) {
+  const initialProjects = props.projects || [];
+  const processingAgencies = props.processingAgencies || [];
+  const investors = props.investors || [];
+  const projectStages = props.projectStages || [];
+  const locations = props.locations || [];
+
   return (
     <>
       <style>{`
@@ -102,10 +102,11 @@ function DashboardContent({
   const [selectedAgency, setSelectedAgency] = useState<any | null>(null);
   const [selectedDept, setSelectedDept] = useState<any | null>(null);
   const [selectedParentStep, setSelectedParentStep] = useState<string | null>(null);
+  const [filterParentStep, setFilterParentStep] = useState<string | null>(null);
   const [selectedChildStep, setSelectedChildStep] = useState<string | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [stepSearchTerm, setStepSearchTerm] = useState('');
-  const [projects, setProjects] = useState<Project[]>(initialProjects);
+  const [projects, setProjects] = useState<Project[]>(initialProjects || []);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'delayed' | 'ontime'>('all');
@@ -114,6 +115,38 @@ function DashboardContent({
   const [filterAgencyName, setFilterAgencyName] = useState('');
   const [filterInvestor, setFilterInvestor] = useState('');
   const [filterProjectStage, setFilterProjectStage] = useState('');
+
+  const [history, setHistory] = useState<string[]>(['overview']);
+
+  const navigateTo = (newView: typeof view) => {
+    setHistory(prev => {
+      if (prev[prev.length - 1] === newView) return prev;
+      return [...prev, newView];
+    });
+    setView(newView);
+  };
+
+  const goBack = () => {
+    if (history.length > 1) {
+      const newHistory = [...history];
+      newHistory.pop(); // Remove current
+      const prevView = newHistory[newHistory.length - 1];
+      setHistory(newHistory);
+      setView(prevView as any);
+      
+      // Reset selections based on previous view
+      if (prevView === 'overview') {
+        setSelectedAgency(null);
+        setSelectedDept(null);
+        setSelectedParentStep(null);
+        setFilterParentStep(null);
+        setSelectedChildStep(null);
+        setStatusFilter('all');
+        setSearchQuery('');
+        setFilterProjectStage('');
+      }
+    }
+  };
 
   // Helper to check if a project matches a location filter (District or Ward)
   function isProjectInLocation(projectLocation: string, filterLoc: string) {
@@ -133,6 +166,7 @@ function DashboardContent({
     if (filterLocation) matches = matches && isProjectInLocation(p.location, filterLocation);
     if (filterInvestor) matches = matches && p.investor === filterInvestor;
     if (filterProjectStage) matches = matches && p.stage === filterProjectStage;
+    if (filterParentStep) matches = matches && p.parentStep === filterParentStep;
     return matches;
   });
 
@@ -141,7 +175,7 @@ function DashboardContent({
   const onTimeProjects = totalProjects - overdueProjects;
 
   useEffect(() => {
-    setProjects(initialProjects);
+    setProjects(initialProjects || []);
   }, [initialProjects]);
 
 
@@ -149,7 +183,7 @@ function DashboardContent({
     if (!query.trim()) return;
     setSearchQuery(query);
     setStatusFilter('all');
-    setView('search-results');
+    navigateTo('search-results');
   };
 
   const dynamicAgencies = [
@@ -178,8 +212,11 @@ function DashboardContent({
     }
   ];
 
-  const dynamicDepartments = selectedAgency ? (selectedAgency.name.includes('Phường xã') || selectedAgency.name.includes('Phường/Xã') || selectedAgency.name.includes('UBND cấp xã, phường') ? Array.from(new Set(locations.map(l => l.ward))) : selectedAgency.departments)
-    .map((deptName: string, index: number) => {
+  const dynamicDepartments = selectedAgency ? (
+    (selectedAgency.name.includes('Phường xã') || selectedAgency.name.includes('Phường/Xã') || selectedAgency.name.includes('UBND cấp xã, phường') 
+      ? Array.from(new Set(locations.map(l => l.ward))) 
+      : (selectedAgency.departments || [])
+    ).map((deptName: string, index: number) => {
       const isWardView = selectedAgency.name.includes('Phường xã') || selectedAgency.name.includes('Phường/Xã') || selectedAgency.name.includes('UBND cấp xã, phường');
       
       // If ward view, check if it matches the location filter
@@ -210,7 +247,7 @@ function DashboardContent({
         ontimeCount
       };
     })
-    .filter((dept: any) => dept !== null && dept.projectCount > 0) : [];
+  ).filter((dept: any) => dept !== null && dept.projectCount > 0) : [];
 
   const handleAgencyClick = (agency: any, status: 'all' | 'delayed' | 'ontime' = 'all') => {
     setSelectedAgency(agency);
@@ -220,44 +257,25 @@ function DashboardContent({
     const isSpecialAgency = agency.name.includes('Sở Xây dựng') || agency.name.includes('Phường xã') || agency.name.includes('Phường/Xã') || agency.name.includes('UBND cấp xã, phường');
     
     if (isSpecialAgency && (agency.departments && agency.departments.length > 0 || agency.name.includes('UBND cấp xã, phường'))) {
-      setView('departments');
+      navigateTo('departments');
     } else {
-      setView('projects');
+      navigateTo('projects');
     }
   };
 
   const handleDeptClick = (dept: any, status: 'all' | 'delayed' | 'ontime' = 'all') => {
     setSelectedDept(dept);
     setStatusFilter(status);
-    setView('projects');
+    navigateTo('projects');
   };
 
   const handleProjectClick = (project: Project) => {
     setSelectedProject(project);
-    setView('detail');
-  };
-
-  const goBack = () => {
-    if (view === 'detail') {
-      if (searchQuery && !selectedDept && !selectedAgency) setView('search-results');
-      else setView('projects');
-    } else {
-      // Return to main dashboard (Overview) from any other view
-      setView('overview');
-      setSelectedAgency(null);
-      setSelectedDept(null);
-      setSelectedParentStep(null);
-      setSelectedChildStep(null);
-      setStatusFilter('all');
-      setSearchQuery('');
-      setFilterProjectStage('');
-      setStepSearchTerm('');
-    }
-    setShowFilters(false);
+    navigateTo('detail');
   };
 
   const FilterPanel = ({ hideInvestorAndStage = false }: { hideInvestorAndStage?: boolean }) => {
-    const agencies = Array.from(new Set(projects.map(p => p.currentAgency).filter(Boolean)));
+    const agencies = Array.from(new Set((projects || []).map(p => p.currentAgency).filter(Boolean)));
 
     return (
       <AnimatePresence>
@@ -352,7 +370,7 @@ function DashboardContent({
   const handleStageClick = (stage: string, status: 'all' | 'delayed' | 'ontime') => {
     setFilterProjectStage(stage);
     setStatusFilter(status);
-    setView('projects');
+    navigateTo('steps');
   };
 
   // --- Views ---
@@ -368,7 +386,7 @@ function DashboardContent({
           <div className="relative z-10 flex flex-col items-center text-center">
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight uppercase">SỞ XÂY DỰNG TP.HCM</h1>
             <div className="flex items-center gap-2 mt-2 text-blue-100/80 text-sm sm:text-base font-bold tracking-widest uppercase">
-              HỆ THỐNG THEO DÕI DỰ ÁN NOXH
+              THEO DÕI TIẾN ĐỘ DỰ ÁN NOXH
               <ChevronRight size={16} className="text-blue-300" />
               <ChevronRight size={16} className="text-blue-300 -ml-2" />
             </div>
@@ -396,7 +414,7 @@ function DashboardContent({
           <div className="grid grid-cols-3 gap-2 mb-4">
             <motion.div 
               whileTap={{ scale: 0.95 }}
-              onClick={() => { setStatusFilter('all'); setView('steps'); }}
+              onClick={() => { setStatusFilter('all'); navigateTo('steps'); }}
               className="bg-blue-50 p-2 rounded-2xl border border-blue-100 flex flex-col items-center text-center cursor-pointer"
             >
               <span className="text-xl sm:text-2xl font-black text-blue-700 tracking-tighter leading-none">{totalProjects}</span>
@@ -404,7 +422,7 @@ function DashboardContent({
             </motion.div>
             <motion.div 
               whileTap={{ scale: 0.95 }}
-              onClick={() => { setStatusFilter('delayed'); setView('steps'); }}
+              onClick={() => { setStatusFilter('delayed'); navigateTo('steps'); }}
               className="bg-rose-50 p-2 rounded-2xl border border-rose-100 flex flex-col items-center text-center cursor-pointer"
             >
               <span className="text-xl sm:text-2xl font-black text-rose-700 tracking-tighter leading-none">{overdueProjects}</span>
@@ -412,7 +430,7 @@ function DashboardContent({
             </motion.div>
             <motion.div 
               whileTap={{ scale: 0.95 }}
-              onClick={() => { setStatusFilter('ontime'); setView('steps'); }}
+              onClick={() => { setStatusFilter('ontime'); navigateTo('steps'); }}
               className="bg-emerald-50 p-2 rounded-2xl border border-emerald-100 flex flex-col items-center text-center cursor-pointer"
             >
               <span className="text-xl sm:text-2xl font-black text-emerald-700 tracking-tighter leading-none">{onTimeProjects}</span>
@@ -426,7 +444,16 @@ function DashboardContent({
 
           {/* Grid of Agencies */}
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {dynamicAgencies.filter(agency => {
+            {dynamicAgencies.concat({
+              id: 'no-investor-stat',
+              name: 'Chưa có chủ đầu tư',
+              count: globalFilteredProjects.filter(p => p.investor === 'Chưa có chủ đầu tư').length,
+              delayedCount: globalFilteredProjects.filter(p => p.investor === 'Chưa có chủ đầu tư' && (p.status === 'Delayed' || p.status === 'Warning')).length,
+              subtext: 'dự án đang xử lý',
+              color: 'bg-amber-50',
+              iconColor: 'text-amber-500',
+              departments: []
+            }).filter(agency => {
               if (statusFilter === 'delayed') return agency.delayedCount > 0;
               if (statusFilter === 'ontime') return (agency.count - agency.delayedCount) > 0;
               return agency.count > 0;
@@ -498,7 +525,7 @@ function DashboardContent({
 
                   return (
                     <div key={stage.name} className={index !== 0 ? "pt-3 border-t border-slate-100" : ""}>
-                      <p className="text-sm font-black text-slate-800 leading-tight line-clamp-2 mb-2">{stage.name}</p>
+                      <p className="text-sm font-black text-slate-800 leading-tight line-clamp-2 mb-3 min-h-[2.5rem] flex items-center">{stage.name}</p>
                       <div className="grid grid-cols-3 gap-2">
                         <motion.button
                           whileTap={{ scale: 0.98 }}
@@ -790,8 +817,9 @@ function DashboardContent({
               key={step.name}
               onClick={() => {
                 setSelectedParentStep(step.name);
+                setFilterParentStep(step.name);
                 setStatusFilter(statusFilter);
-                setView('child-steps');
+                navigateTo('agencies');
               }}
               className="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex flex-col gap-0.5 cursor-pointer"
             >
@@ -820,7 +848,7 @@ function DashboardContent({
                       e.stopPropagation();
                       setSelectedParentStep(step.name);
                       setStatusFilter('delayed');
-                      setView('child-steps');
+                      navigateTo('child-steps');
                     }}
                     className="hover:scale-110 transition-transform"
                   >
@@ -831,7 +859,7 @@ function DashboardContent({
                       e.stopPropagation();
                       setSelectedParentStep(step.name);
                       setStatusFilter('ontime');
-                      setView('child-steps');
+                      navigateTo('child-steps');
                     }}
                     className="hover:scale-110 transition-transform"
                   >
@@ -879,7 +907,7 @@ function DashboardContent({
               onClick={() => {
                 setSelectedChildStep(step.name);
                 setStatusFilter(statusFilter);
-                setView('projects');
+                navigateTo('projects');
               }}
               className="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex flex-col gap-0.5 cursor-pointer"
             >
@@ -908,7 +936,7 @@ function DashboardContent({
                       e.stopPropagation();
                       setSelectedChildStep(step.name);
                       setStatusFilter('delayed');
-                      setView('projects');
+                      navigateTo('projects');
                     }}
                     className="hover:scale-110 transition-transform"
                   >
@@ -919,7 +947,7 @@ function DashboardContent({
                       e.stopPropagation();
                       setSelectedChildStep(step.name);
                       setStatusFilter('ontime');
-                      setView('projects');
+                      navigateTo('projects');
                     }}
                     className="hover:scale-110 transition-transform"
                   >
@@ -944,7 +972,11 @@ function DashboardContent({
       } else if (selectedDept) {
         matches = p.currentAgency === selectedAgency?.name && (p.currentDepartment === selectedDept.name || p.location.includes(selectedDept.name));
       } else if (selectedAgency) {
-        matches = p.currentAgency === selectedAgency?.name;
+        if (selectedAgency.id === 'no-investor-stat') {
+          matches = p.investor === 'Chưa có chủ đầu tư';
+        } else {
+          matches = p.currentAgency === selectedAgency?.name;
+        }
       }
       
       if (statusFilter === 'delayed') matches = matches && (p.status === 'Delayed' || p.status === 'Warning');

@@ -6,6 +6,7 @@ import {
 import { motion } from 'motion/react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { PROJECT_STAGES, PROJECT_REGIONS } from '../constants';
+import { INITIAL_PROCESSES } from '../data/appData';
 
 const StatCard = ({ label, value, icon: Icon, color }: any) => (
   <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
@@ -64,9 +65,9 @@ export default function DashboardView({ projects: initialProjects = [], onCreate
     { label: 'Quá hạn', value: treHan, icon: AlertCircle, color: { bg: 'bg-rose-50', text: 'text-rose-600' } },
   ];
 
-  const stageData = noxhProcessStages.map((stage: string) => ({
-    name: stage,
-    value: projects.filter(p => p.stage === stage).length
+  const processData = INITIAL_PROCESSES.map((process: any) => ({
+    name: process.name,
+    value: projects.filter(p => p.processId === process.id).length
   })).filter((d: any) => d.value > 0);
   
   const COLORS = ['#f59e0b', '#4f46e5', '#10b981', '#0ea5e9'];
@@ -143,8 +144,8 @@ export default function DashboardView({ projects: initialProjects = [], onCreate
           <div className="h-[250px] sm:h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={stageData} innerRadius={50} outerRadius={80} paddingAngle={5} dataKey="value">
-                  {stageData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                <Pie data={processData} innerRadius={50} outerRadius={80} paddingAngle={5} dataKey="value">
+                  {processData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                 </Pie>
                 <Tooltip />
                 <Legend iconSize={10} wrapperStyle={{ fontSize: '12px' }} />

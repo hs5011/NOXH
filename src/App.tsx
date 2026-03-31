@@ -178,7 +178,7 @@ export default function App() {
           </div>
         </header>
 
-        <main className={`flex-1 overflow-y-auto ${activeTab === 'dashboard-app' ? 'p-0' : 'p-4 sm:p-8'}`}>
+        <main className={`flex-1 overflow-y-auto ${(activeTab === 'dashboard-app' || activeTab === 'agency-project-stats') ? 'p-0' : 'p-4 sm:p-8'}`}>
           {activeTab === 'dashboard' && (
             <DashboardView 
               projects={projects}
@@ -234,7 +234,16 @@ export default function App() {
           )}
           {activeTab === 'process-gantt' && <ProcessGanttView projects={projects} />}
           {activeTab === 'annual-update' && <AnnualProgressUpdate projects={projects} reportDate={reportDate} setReportDate={setReportDate} />}
-          {activeTab === 'agency-project-stats' && <AgencyProjectStats projects={projects} processingAgencies={processingAgencies} />}
+          {activeTab === 'agency-project-stats' && (
+            <AgencyProjectStats 
+              projects={projects} 
+              processingAgencies={processingAgencies} 
+              projectStages={projectStages}
+              locations={locations}
+              investors={investors}
+              projectSteps={projectSteps}
+            />
+          )}
           {activeTab === 'tasks' && <TasksView />}
           {activeTab === 'housing-update' && (
             <HousingUpdateView 

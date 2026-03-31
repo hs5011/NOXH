@@ -294,16 +294,27 @@ export default function CreateProject({
                         <div className="space-y-2">
                           <div className="flex justify-between items-center">
                             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Chủ đầu tư <span className="text-rose-500">*</span></label>
+                            <label className="flex items-center gap-2 cursor-pointer group">
+                              <input 
+                                type="checkbox" 
+                                checked={formData.investor === 'Chưa có chủ đầu tư'}
+                                onChange={e => setFormData({...formData, investor: e.target.checked ? 'Chưa có chủ đầu tư' : ''})}
+                                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                              />
+                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest group-hover:text-blue-600 transition-colors">Chưa có chủ đầu tư</span>
+                            </label>
                           </div>
-                          <select 
-                            required
-                            value={formData.investor}
-                            onChange={e => setFormData({...formData, investor: e.target.value})}
-                            className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
-                          >
-                            <option value="">Chọn chủ đầu tư...</option>
-                            {investors.map(inv => <option key={inv} value={inv}>{inv}</option>)}
-                          </select>
+                          {formData.investor !== 'Chưa có chủ đầu tư' && (
+                            <select 
+                              required
+                              value={formData.investor}
+                              onChange={e => setFormData({...formData, investor: e.target.value})}
+                              className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                            >
+                              <option value="">Chọn chủ đầu tư...</option>
+                              {investors.map(inv => <option key={inv} value={inv}>{inv}</option>)}
+                            </select>
+                          )}
                         </div>
                         <div className="space-y-2">
                           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Người theo dõi</label>
