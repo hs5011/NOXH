@@ -6,6 +6,7 @@ import {
   BarChart3, Settings
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { INITIAL_PROCESSES } from '../data/appData';
 
 interface Project {
   id: string;
@@ -20,6 +21,7 @@ interface Project {
   stage?: string;
   parentStep?: string;
   childStep?: string;
+  processId?: string;
 }
 
 interface Agency {
@@ -36,6 +38,7 @@ interface AgencyProjectStatsProps {
   locations?: any[];
   investors?: string[];
   projectSteps?: string[];
+  onProjectClick?: (project: any) => void;
 }
 
 export default function AgencyProjectStats({ 
@@ -44,17 +47,19 @@ export default function AgencyProjectStats({
   projectStages = [],
   locations = [],
   investors: initialInvestors = [],
-  projectSteps = []
+  projectSteps = [],
+  onProjectClick
 }: AgencyProjectStatsProps) {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [loading, setLoading] = useState(false);
-  const [view, setView] = useState<'agencies' | 'departments' | 'investors' | 'projects' | 'steps' | 'child-steps'>('agencies');
+  const [view, setView] = useState<'agencies' | 'departments' | 'investors' | 'projects' | 'steps' | 'child-steps' | 'processes'>('agencies');
   const [selectedAgency, setSelectedAgency] = useState<Agency | null>(null);
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
   const [selectedInvestor, setSelectedInvestor] = useState<string | null>(null);
   const [selectedParentStep, setSelectedParentStep] = useState<string | null>(null);
   const [selectedChildStep, setSelectedChildStep] = useState<string | null>(null);
   const [selectedProjectStage, setSelectedProjectStage] = useState<string | null>(null);
+  const [selectedProcess, setSelectedProcess] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [stepSearchTerm, setStepSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'delayed' | 'ontime'>('all');
@@ -135,31 +140,79 @@ export default function AgencyProjectStats({
   const getDepartmentStats = (agencyName: string, deptName: string) => {
     const deptProjects = globalFilteredProjects.filter(p => p.currentAgency === agencyName && p.currentDepartment === deptName);
     const delayed = deptProjects.filter(p => p.status === 'Delayed' || p.status === 'Warning').length;
+    const ontime = deptProjects.length - delayed;
+    let count = deptProjects.length;
+    if (statusFilter === 'delayed') count = delayed;
+    if (statusFilter === 'ontime') count = ontime;
     return {
       total: deptProjects.length,
-      delayed
+      delayed,
+      ontime,
+      count
     };
   };
 
   const getInvestorStats = (investorName: string) => {
     const investorProjects = globalFilteredProjects.filter(p => p.investor === investorName);
     const delayed = investorProjects.filter(p => p.status === 'Delayed' || p.status === 'Warning').length;
+    const ontime = investorProjects.length - delayed;
+    let count = investorProjects.length;
+    if (statusFilter === 'delayed') count = delayed;
+    if (statusFilter === 'ontime') count = ontime;
     return {
       total: investorProjects.length,
-      delayed
+      delayed,
+      ontime,
+      count
     };
+  };
+
+  const getProcessStats = () => {
+    const processes = new Set<string>();
+    globalFilteredProjects.forEach(p => {
+      if (p.processId) processes.add(p.processId);
+    });
+
+    return Array.from(processes)
+      .map(processId => {
+        const process = INITIAL_PROCESSES.find(p => p.id === processId);
+        const processName = process ? process.name : 'Quy trình khác';
+        const processProjects = globalFilteredProjects.filter(p => p.processId === processId);
+        const delayed = processProjects.filter(p => p.status === 'Delayed' || p.status === 'Warning').length;
+        const ontime = processProjects.length - delayed;
+        
+        let count = processProjects.length;
+        if (statusFilter === 'delayed') count = delayed;
+        if (statusFilter === 'ontime') count = ontime;
+
+        return {
+          id: processId,
+          name: processName,
+          count,
+          total: processProjects.length,
+          delayed,
+          ontime
+        };
+      }).filter(s => s.count > 0);
   };
 
   const getParentStepStats = () => {
     const parentSteps = new Set<string>();
-    globalFilteredProjects.forEach(p => {
+    let baseProjects = globalFilteredProjects;
+    if (selectedProcess) {
+      baseProjects = baseProjects.filter(p => p.processId === selectedProcess);
+    } else if (selectedProjectStage) {
+      baseProjects = baseProjects.filter(p => p.stage === selectedProjectStage || (p as any).stage === selectedProjectStage);
+    }
+
+    baseProjects.forEach(p => {
       if ((p as any).parentStep) parentSteps.add((p as any).parentStep);
     });
 
     return Array.from(parentSteps)
       .filter(stepName => stepName.toLowerCase().includes(stepSearchTerm.toLowerCase()))
       .map(stepName => {
-        const stepProjects = globalFilteredProjects.filter(p => (p as any).parentStep === stepName);
+        const stepProjects = baseProjects.filter(p => (p as any).parentStep === stepName);
         const delayed = stepProjects.filter(p => p.status === 'Delayed' || p.status === 'Warning').length;
         const ontime = stepProjects.length - delayed;
         
@@ -179,14 +232,21 @@ export default function AgencyProjectStats({
 
   const getChildStepStats = (parentStepName: string) => {
     const childSteps = new Set<string>();
-    globalFilteredProjects.forEach(p => {
+    let baseProjects = globalFilteredProjects;
+    if (selectedProcess) {
+      baseProjects = baseProjects.filter(p => p.processId === selectedProcess);
+    } else if (selectedProjectStage) {
+      baseProjects = baseProjects.filter(p => p.stage === selectedProjectStage || (p as any).stage === selectedProjectStage);
+    }
+
+    baseProjects.forEach(p => {
       if ((p as any).parentStep === parentStepName && (p as any).childStep) childSteps.add((p as any).childStep);
     });
 
     return Array.from(childSteps)
       .filter(stepName => stepName.toLowerCase().includes(stepSearchTerm.toLowerCase()))
       .map(stepName => {
-        const stepProjects = globalFilteredProjects.filter(p => (p as any).parentStep === parentStepName && (p as any).childStep === stepName);
+        const stepProjects = baseProjects.filter(p => (p as any).parentStep === parentStepName && (p as any).childStep === stepName);
         const delayed = stepProjects.filter(p => p.status === 'Delayed' || p.status === 'Warning').length;
         const ontime = stepProjects.length - delayed;
         
@@ -204,13 +264,25 @@ export default function AgencyProjectStats({
       }).filter(s => s.count > 0);
   };
 
-  const investorsList = initialInvestors.length > 0 ? initialInvestors : Array.from(new Set(projects.map(p => p.investor))).sort();
+  const investorsList = (initialInvestors.length > 0 ? initialInvestors : Array.from(new Set(projects.map(p => p.investor))).sort()).filter(i => i !== 'Chưa có chủ đầu tư');
 
   const filteredProjects = globalFilteredProjects.filter(p => {
     if (view === 'projects') {
-      if (selectedChildStep) return (p as any).childStep === selectedChildStep;
-      if (selectedParentStep) return (p as any).parentStep === selectedParentStep;
+      if (selectedChildStep) {
+        let match = (p as any).childStep === selectedChildStep;
+        if (selectedParentStep) match = match && (p as any).parentStep === selectedParentStep;
+        if (selectedProcess) match = match && p.processId === selectedProcess;
+        if (selectedProjectStage) match = match && (p.stage === selectedProjectStage || (p as any).stage === selectedProjectStage);
+        return match;
+      }
+      if (selectedParentStep) {
+        let match = (p as any).parentStep === selectedParentStep;
+        if (selectedProcess) match = match && p.processId === selectedProcess;
+        if (selectedProjectStage) match = match && (p.stage === selectedProjectStage || (p as any).stage === selectedProjectStage);
+        return match;
+      }
       if (selectedProjectStage) return (p as any).stage === selectedProjectStage || p.stage === selectedProjectStage;
+      if (selectedProcess) return p.processId === selectedProcess;
       if (selectedInvestor) return p.investor === selectedInvestor;
       if (selectedDepartment) {
         return p.currentAgency === selectedAgency?.name && p.currentDepartment === selectedDepartment;
@@ -236,8 +308,15 @@ export default function AgencyProjectStats({
       } else if (selectedProjectStage) {
         setView('agencies');
         setSelectedProjectStage(null);
+      } else if (selectedProcess) {
+        setView('agencies');
+        setSelectedProcess(null);
       } else if (selectedInvestor) {
-        setView('investors');
+        if (selectedInvestor === 'Chưa có chủ đầu tư') {
+          setView('agencies');
+        } else {
+          setView('investors');
+        }
         setSelectedInvestor(null);
       } else if (selectedDepartment) {
         setView('departments');
@@ -249,12 +328,23 @@ export default function AgencyProjectStats({
     } else if (view === 'child-steps') {
       setView('steps');
       setSelectedChildStep(null);
-    } else if (view === 'steps' || view === 'departments' || view === 'investors') {
+    } else if (view === 'steps') {
+      if (selectedProcess) {
+        setView('processes');
+        setSelectedProcess(null);
+      } else if (selectedProjectStage) {
+        setView('agencies');
+        setSelectedProjectStage(null);
+      } else {
+        setView('agencies');
+      }
+    } else if (view === 'departments' || view === 'investors' || view === 'processes') {
       setView('agencies');
       setSelectedAgency(null);
       setSelectedInvestor(null);
       setSelectedParentStep(null);
       setSelectedProjectStage(null);
+      setSelectedProcess(null);
     }
     setStatusFilter('all');
   };
@@ -480,66 +570,67 @@ export default function AgencyProjectStats({
 
               {/* Statistics Grids */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
-                {/* Statistics by Procedure (Steps) */}
+                {/* Statistics by Process */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-black text-slate-800 tracking-tight">Thống kê theo thủ tục</h2>
+                    <h2 className="text-xl font-black text-slate-800 tracking-tight">Thống kê theo quy trình</h2>
                     <button 
-                      onClick={() => setView('steps')}
+                      onClick={() => setView('processes')}
                       className="text-xs font-bold text-blue-600 hover:text-blue-700 uppercase tracking-widest flex items-center gap-1"
                     >
                       Xem tất cả <ChevronRight size={14} />
                     </button>
                   </div>
                   <div className="bg-white p-4 sm:p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                    {Array.from(new Set(globalFilteredProjects.map(p => (p as any).parentStep).filter(Boolean)))
+                    {getProcessStats()
                       .slice(0, 5) // Show only top 5 on overview
-                      .map((stepName, index) => {
-                        const stepProjects = globalFilteredProjects.filter(p => (p as any).parentStep === stepName);
-                        const delayed = stepProjects.filter(p => p.status === 'Delayed' || p.status === 'Warning').length;
-                        const ontime = stepProjects.length - delayed;
-                        const total = stepProjects.length;
-
+                      .map((process, index) => {
                         return (
-                          <div key={stepName as string} className={index !== 0 ? "pt-4 border-t border-slate-100" : ""}>
-                            <p className="text-sm font-bold text-slate-800 leading-tight line-clamp-2 mb-3 min-h-[2.5rem] flex items-center">{stepName as string}</p>
-                            <div className="grid grid-cols-3 gap-3">
-                              <motion.button
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => {
-                                  setSelectedParentStep(stepName as string);
-                                  setStatusFilter('all');
-                                  setView('projects');
-                                }}
-                                className="bg-blue-50 hover:bg-blue-100 p-2 rounded-xl border border-blue-100 flex flex-col items-center transition-colors"
-                              >
-                                <span className="text-2xl font-black text-blue-700 tracking-tighter leading-none">{total}</span>
-                                <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest mt-1">Tổng</span>
-                              </motion.button>
-                              <motion.button
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => {
-                                  setSelectedParentStep(stepName as string);
-                                  setStatusFilter('delayed');
-                                  setView('projects');
-                                }}
-                                className="bg-rose-50 hover:bg-rose-100 p-2 rounded-xl border border-rose-100 flex flex-col items-center transition-colors"
-                              >
-                                <span className="text-2xl font-black text-rose-700 tracking-tighter leading-none">{delayed}</span>
-                                <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest mt-1">Quá hạn</span>
-                              </motion.button>
-                              <motion.button
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => {
-                                  setSelectedParentStep(stepName as string);
-                                  setStatusFilter('ontime');
-                                  setView('projects');
-                                }}
-                                className="bg-emerald-50 hover:bg-emerald-100 p-2 rounded-xl border border-emerald-100 flex flex-col items-center transition-colors"
-                              >
-                                <span className="text-2xl font-black text-emerald-700 tracking-tighter leading-none">{ontime}</span>
-                                <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mt-1">Còn hạn</span>
-                              </motion.button>
+                          <div key={process.id} className={index !== 0 ? "pt-4 border-t border-slate-100" : ""}>
+                            <p className="text-sm font-bold text-slate-800 leading-tight line-clamp-2 mb-3 min-h-[2.5rem] flex items-center">{process.name}</p>
+                            <div className={`grid gap-3 ${statusFilter === 'all' ? 'grid-cols-3' : 'grid-cols-1'}`}>
+                              {statusFilter === 'all' && (
+                                <motion.button
+                                  whileTap={{ scale: 0.98 }}
+                                  onClick={() => {
+                                    setSelectedProcess(process.id);
+                                    setStatusFilter('all');
+                                    setView('steps');
+                                  }}
+                                  className="bg-blue-50 hover:bg-blue-100 p-2 rounded-xl border border-blue-100 flex flex-col items-center transition-colors"
+                                >
+                                  <span className="text-2xl font-black text-blue-700 tracking-tighter leading-none">{process.total}</span>
+                                  <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest mt-1">Tổng</span>
+                                </motion.button>
+                              )}
+                              {(statusFilter === 'all' || statusFilter === 'delayed') && (
+                                <motion.button
+                                  whileTap={{ scale: 0.98 }}
+                                  onClick={() => {
+                                    setSelectedProcess(process.id);
+                                    setStatusFilter('delayed');
+                                    setView('steps');
+                                  }}
+                                  className="bg-rose-50 hover:bg-rose-100 p-2 rounded-xl border border-rose-100 flex flex-col items-center transition-colors"
+                                >
+                                  <span className="text-2xl font-black text-rose-700 tracking-tighter leading-none">{process.delayed}</span>
+                                  <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest mt-1">Quá hạn</span>
+                                </motion.button>
+                              )}
+                              {(statusFilter === 'all' || statusFilter === 'ontime') && (
+                                <motion.button
+                                  whileTap={{ scale: 0.98 }}
+                                  onClick={() => {
+                                    setSelectedProcess(process.id);
+                                    setStatusFilter('ontime');
+                                    setView('steps');
+                                  }}
+                                  className="bg-emerald-50 hover:bg-emerald-100 p-2 rounded-xl border border-emerald-100 flex flex-col items-center transition-colors"
+                                >
+                                  <span className="text-2xl font-black text-emerald-700 tracking-tighter leading-none">{process.ontime}</span>
+                                  <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mt-1">Còn hạn</span>
+                                </motion.button>
+                              )}
                             </div>
                           </div>
                         );
@@ -568,43 +659,49 @@ export default function AgencyProjectStats({
                         return (
                           <div key={stage.name} className={index !== 0 ? "pt-4 border-t border-slate-100" : ""}>
                             <p className="text-sm font-bold text-slate-800 leading-tight line-clamp-2 mb-3 min-h-[2.5rem] flex items-center">{stage.name}</p>
-                            <div className="grid grid-cols-3 gap-3">
-                              <motion.button
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => {
-                                  setSelectedProjectStage(stage.name);
-                                  setStatusFilter('all');
-                                  setView('projects');
-                                }}
-                                className="bg-blue-50 hover:bg-blue-100 p-2 rounded-xl border border-blue-100 flex flex-col items-center transition-colors"
-                              >
-                                <span className="text-2xl font-black text-blue-700 tracking-tighter leading-none">{total}</span>
-                                <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest mt-1">Tổng</span>
-                              </motion.button>
-                              <motion.button
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => {
-                                  setSelectedProjectStage(stage.name);
-                                  setStatusFilter('delayed');
-                                  setView('projects');
-                                }}
-                                className="bg-rose-50 hover:bg-rose-100 p-2 rounded-xl border border-rose-100 flex flex-col items-center transition-colors"
-                              >
-                                <span className="text-2xl font-black text-rose-700 tracking-tighter leading-none">{delayed}</span>
-                                <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest mt-1">Quá hạn</span>
-                              </motion.button>
-                              <motion.button
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => {
-                                  setSelectedProjectStage(stage.name);
-                                  setStatusFilter('ontime');
-                                  setView('projects');
-                                }}
-                                className="bg-emerald-50 hover:bg-emerald-100 p-2 rounded-xl border border-emerald-100 flex flex-col items-center transition-colors"
-                              >
-                                <span className="text-2xl font-black text-emerald-700 tracking-tighter leading-none">{ontime}</span>
-                                <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mt-1">Còn hạn</span>
-                              </motion.button>
+                            <div className={`grid gap-3 ${statusFilter === 'all' ? 'grid-cols-3' : 'grid-cols-1'}`}>
+                              {statusFilter === 'all' && (
+                                <motion.button
+                                  whileTap={{ scale: 0.98 }}
+                                  onClick={() => {
+                                    setSelectedProjectStage(stage.name);
+                                    setStatusFilter('all');
+                                    setView('steps');
+                                  }}
+                                  className="bg-blue-50 hover:bg-blue-100 p-2 rounded-xl border border-blue-100 flex flex-col items-center transition-colors"
+                                >
+                                  <span className="text-2xl font-black text-blue-700 tracking-tighter leading-none">{total}</span>
+                                  <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest mt-1">Tổng</span>
+                                </motion.button>
+                              )}
+                              {(statusFilter === 'all' || statusFilter === 'delayed') && (
+                                <motion.button
+                                  whileTap={{ scale: 0.98 }}
+                                  onClick={() => {
+                                    setSelectedProjectStage(stage.name);
+                                    setStatusFilter('delayed');
+                                    setView('steps');
+                                  }}
+                                  className="bg-rose-50 hover:bg-rose-100 p-2 rounded-xl border border-rose-100 flex flex-col items-center transition-colors"
+                                >
+                                  <span className="text-2xl font-black text-rose-700 tracking-tighter leading-none">{delayed}</span>
+                                  <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest mt-1">Quá hạn</span>
+                                </motion.button>
+                              )}
+                              {(statusFilter === 'all' || statusFilter === 'ontime') && (
+                                <motion.button
+                                  whileTap={{ scale: 0.98 }}
+                                  onClick={() => {
+                                    setSelectedProjectStage(stage.name);
+                                    setStatusFilter('ontime');
+                                    setView('steps');
+                                  }}
+                                  className="bg-emerald-50 hover:bg-emerald-100 p-2 rounded-xl border border-emerald-100 flex flex-col items-center transition-colors"
+                                >
+                                  <span className="text-2xl font-black text-emerald-700 tracking-tighter leading-none">{ontime}</span>
+                                  <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest mt-1">Còn hạn</span>
+                                </motion.button>
+                              )}
                             </div>
                           </div>
                         );
@@ -636,7 +733,7 @@ export default function AgencyProjectStats({
               <div className="grid grid-cols-1 gap-2">
                 {selectedAgency.departments
                   .map(dept => ({ name: dept, stats: getDepartmentStats(selectedAgency.name, dept) }))
-                  .filter(item => item.stats.total > 0)
+                  .filter(item => item.stats.count > 0)
                   .map((item, idx) => (
                     <div
                       key={idx}
@@ -649,17 +746,23 @@ export default function AgencyProjectStats({
                       <div className="flex-1 min-w-0 flex items-center justify-between px-2">
                         <div className="flex flex-col">
                           <h3 className="text-base font-black text-slate-800 truncate leading-tight group-hover:text-blue-600 transition-colors">{item.name}</h3>
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1">Tổng số {item.stats.total} dự án</p>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1">
+                            Tổng số {item.stats.count} {statusFilter === 'all' ? 'dự án' : statusFilter === 'delayed' ? 'dự án quá hạn' : 'dự án còn hạn'}
+                          </p>
                         </div>
                         <div className="flex items-center gap-6">
-                          <div className="flex flex-col items-center">
-                            <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest leading-none mb-1">Còn hạn</span>
-                            <span className="text-xl font-black text-emerald-600 leading-none">{item.stats.total - item.stats.delayed}</span>
-                          </div>
-                          <div className="flex flex-col items-center">
-                            <span className="text-[9px] font-black text-rose-400 uppercase tracking-widest leading-none mb-1">Quá hạn</span>
-                            <span className="text-xl font-black text-rose-600 leading-none">{item.stats.delayed}</span>
-                          </div>
+                          {(statusFilter === 'all' || statusFilter === 'ontime') && (
+                            <div className="flex flex-col items-center">
+                              <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest leading-none mb-1">Còn hạn</span>
+                              <span className="text-xl font-black text-emerald-600 leading-none">{item.stats.ontime}</span>
+                            </div>
+                          )}
+                          {(statusFilter === 'all' || statusFilter === 'delayed') && (
+                            <div className="flex flex-col items-center">
+                              <span className="text-[9px] font-black text-rose-400 uppercase tracking-widest leading-none mb-1">Quá hạn</span>
+                              <span className="text-xl font-black text-rose-600 leading-none">{item.stats.delayed}</span>
+                            </div>
+                          )}
                           <ChevronRight size={16} className="text-slate-300 group-hover:text-blue-500 transition-colors" />
                         </div>
                       </div>
@@ -690,7 +793,7 @@ export default function AgencyProjectStats({
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {investorsList
                   .map(investor => ({ name: investor, stats: getInvestorStats(investor) }))
-                  .filter(item => item.stats.total > 0)
+                  .filter(item => item.stats.count > 0)
                   .map((item, idx) => (
                     <button
                       key={idx}
@@ -708,14 +811,111 @@ export default function AgencyProjectStats({
                         <h3 className="text-base font-black text-slate-800 leading-tight mb-2 group-hover:text-emerald-600 transition-colors line-clamp-2">{item.name}</h3>
                         <div className="flex items-end justify-between mt-4">
                           <div className="space-y-1">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dự án</p>
-                            <p className="text-2xl font-black text-slate-900 tracking-tighter">{item.stats.total}</p>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                              {statusFilter === 'all' ? 'Dự án' : statusFilter === 'delayed' ? 'Quá hạn' : 'Còn hạn'}
+                            </p>
+                            <p className="text-2xl font-black text-slate-900 tracking-tighter">{item.stats.count}</p>
                           </div>
                           <ChevronRight size={16} className="text-slate-300 group-hover:text-emerald-500 transition-colors" />
                         </div>
                       </div>
                     </button>
                   ))}
+              </div>
+            </motion.div>
+          )}
+
+          {view === 'processes' && (
+            <motion.div 
+              key="processes-view"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-6"
+            >
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div className="flex items-center gap-3">
+                  <button onClick={handleBack} className="p-2 bg-slate-100 rounded-xl text-slate-600 hover:bg-slate-200 transition-all">
+                    <ChevronLeft size={20} />
+                  </button>
+                  <div>
+                    <h2 className="text-xl font-black text-slate-900 leading-tight">Thống kê theo quy trình</h2>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Danh sách các quy trình</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3">
+                {getProcessStats().map((process) => (
+                  <motion.div
+                    key={process.id}
+                    className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm hover:border-blue-200 transition-colors"
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                          <BarChart3 size={20} />
+                        </div>
+                        <div>
+                          <h3 className="font-black text-slate-800 leading-tight">{process.name}</h3>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
+                            {process.count} {statusFilter === 'all' ? 'dự án' : statusFilter === 'delayed' ? 'dự án quá hạn' : 'dự án còn hạn'}
+                          </p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => {
+                          setSelectedProcess(process.id);
+                          setView('steps');
+                        }}
+                        className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                      >
+                        <ChevronRight size={18} />
+                      </button>
+                    </div>
+                    <div className={`grid gap-2 ${statusFilter === 'all' ? 'grid-cols-3' : 'grid-cols-1'}`}>
+                      {statusFilter === 'all' && (
+                        <button
+                          onClick={() => {
+                            setSelectedProcess(process.id);
+                            setStatusFilter('all');
+                            setView('steps');
+                          }}
+                          className="bg-blue-50/50 p-2 rounded-xl border border-blue-100/50 flex flex-col items-center"
+                        >
+                          <span className="text-lg font-black text-blue-700 tracking-tighter leading-none">{process.total}</span>
+                          <span className="text-[8px] font-black text-blue-400 uppercase tracking-widest mt-1">Tổng</span>
+                        </button>
+                      )}
+                      {(statusFilter === 'all' || statusFilter === 'delayed') && (
+                        <button
+                          onClick={() => {
+                            setSelectedProcess(process.id);
+                            setStatusFilter('delayed');
+                            setView('steps');
+                          }}
+                          className="bg-rose-50/50 p-2 rounded-xl border border-rose-100/50 flex flex-col items-center"
+                        >
+                          <span className="text-lg font-black text-rose-700 tracking-tighter leading-none">{process.delayed}</span>
+                          <span className="text-[8px] font-black text-rose-400 uppercase tracking-widest mt-1">Quá hạn</span>
+                        </button>
+                      )}
+                      {(statusFilter === 'all' || statusFilter === 'ontime') && (
+                        <button
+                          onClick={() => {
+                            setSelectedProcess(process.id);
+                            setStatusFilter('ontime');
+                            setView('steps');
+                          }}
+                          className="bg-emerald-50/50 p-2 rounded-xl border border-emerald-100/50 flex flex-col items-center"
+                        >
+                          <span className="text-lg font-black text-emerald-700 tracking-tighter leading-none">{process.ontime}</span>
+                          <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mt-1">Còn hạn</span>
+                        </button>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
               </div>
             </motion.div>
           )}
@@ -734,7 +934,11 @@ export default function AgencyProjectStats({
                     <ChevronLeft size={20} />
                   </button>
                   <div>
-                    <h2 className="text-xl font-black text-slate-900 leading-tight">Thống kê theo thủ tục</h2>
+                    <h2 className="text-xl font-black text-slate-900 leading-tight">
+                      {selectedProcess ? (INITIAL_PROCESSES.find(p => p.id === selectedProcess)?.name || 'Thống kê theo thủ tục') : 
+                       selectedProjectStage ? `Giai đoạn: ${selectedProjectStage}` : 
+                       'Thống kê theo thủ tục'}
+                    </h2>
                     <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Danh sách các thủ tục hành chính</p>
                   </div>
                 </div>
@@ -764,7 +968,7 @@ export default function AgencyProjectStats({
                         <div>
                           <h3 className="font-black text-slate-800 leading-tight">{step.name}</h3>
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-                            {step.total} dự án
+                            {step.count} {statusFilter === 'all' ? 'dự án' : statusFilter === 'delayed' ? 'dự án quá hạn' : 'dự án còn hạn'}
                           </p>
                         </div>
                       </div>
@@ -779,40 +983,46 @@ export default function AgencyProjectStats({
                         <ChevronRight size={18} />
                       </button>
                     </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <button
-                        onClick={() => {
-                          setSelectedParentStep(step.name);
-                          setStatusFilter('all');
-                          setView('projects');
-                        }}
-                        className="bg-blue-50/50 p-2 rounded-xl border border-blue-100/50 flex flex-col items-center"
-                      >
-                        <span className="text-lg font-black text-blue-700 tracking-tighter leading-none">{step.total}</span>
-                        <span className="text-[8px] font-black text-blue-400 uppercase tracking-widest mt-1">Tổng</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedParentStep(step.name);
-                          setStatusFilter('delayed');
-                          setView('projects');
-                        }}
-                        className="bg-rose-50/50 p-2 rounded-xl border border-rose-100/50 flex flex-col items-center"
-                      >
-                        <span className="text-lg font-black text-rose-700 tracking-tighter leading-none">{step.delayed}</span>
-                        <span className="text-[8px] font-black text-rose-400 uppercase tracking-widest mt-1">Quá hạn</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedParentStep(step.name);
-                          setStatusFilter('ontime');
-                          setView('projects');
-                        }}
-                        className="bg-emerald-50/50 p-2 rounded-xl border border-emerald-100/50 flex flex-col items-center"
-                      >
-                        <span className="text-lg font-black text-emerald-700 tracking-tighter leading-none">{step.ontime}</span>
-                        <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mt-1">Còn hạn</span>
-                      </button>
+                    <div className={`grid gap-2 ${statusFilter === 'all' ? 'grid-cols-3' : 'grid-cols-1'}`}>
+                      {statusFilter === 'all' && (
+                        <button
+                          onClick={() => {
+                            setSelectedParentStep(step.name);
+                            setStatusFilter('all');
+                            setView('projects');
+                          }}
+                          className="bg-blue-50/50 p-2 rounded-xl border border-blue-100/50 flex flex-col items-center"
+                        >
+                          <span className="text-lg font-black text-blue-700 tracking-tighter leading-none">{step.total}</span>
+                          <span className="text-[8px] font-black text-blue-400 uppercase tracking-widest mt-1">Tổng</span>
+                        </button>
+                      )}
+                      {(statusFilter === 'all' || statusFilter === 'delayed') && (
+                        <button
+                          onClick={() => {
+                            setSelectedParentStep(step.name);
+                            setStatusFilter('delayed');
+                            setView('projects');
+                          }}
+                          className="bg-rose-50/50 p-2 rounded-xl border border-rose-100/50 flex flex-col items-center"
+                        >
+                          <span className="text-lg font-black text-rose-700 tracking-tighter leading-none">{step.delayed}</span>
+                          <span className="text-[8px] font-black text-rose-400 uppercase tracking-widest mt-1">Quá hạn</span>
+                        </button>
+                      )}
+                      {(statusFilter === 'all' || statusFilter === 'ontime') && (
+                        <button
+                          onClick={() => {
+                            setSelectedParentStep(step.name);
+                            setStatusFilter('ontime');
+                            setView('projects');
+                          }}
+                          className="bg-emerald-50/50 p-2 rounded-xl border border-emerald-100/50 flex flex-col items-center"
+                        >
+                          <span className="text-lg font-black text-emerald-700 tracking-tighter leading-none">{step.ontime}</span>
+                          <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mt-1">Còn hạn</span>
+                        </button>
+                      )}
                     </div>
                   </motion.div>
                 ))}
@@ -864,45 +1074,51 @@ export default function AgencyProjectStats({
                         <div>
                           <h3 className="font-black text-slate-800 leading-tight">{step.name}</h3>
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-                            {step.total} dự án
+                            {step.count} {statusFilter === 'all' ? 'dự án' : statusFilter === 'delayed' ? 'dự án quá hạn' : 'dự án còn hạn'}
                           </p>
                         </div>
                       </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <button
-                        onClick={() => {
-                          setSelectedChildStep(step.name);
-                          setStatusFilter('all');
-                          setView('projects');
-                        }}
-                        className="bg-blue-50/50 p-2 rounded-xl border border-blue-100/50 flex flex-col items-center"
-                      >
-                        <span className="text-lg font-black text-blue-700 tracking-tighter leading-none">{step.total}</span>
-                        <span className="text-[8px] font-black text-blue-400 uppercase tracking-widest mt-1">Tổng</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedChildStep(step.name);
-                          setStatusFilter('delayed');
-                          setView('projects');
-                        }}
-                        className="bg-rose-50/50 p-2 rounded-xl border border-rose-100/50 flex flex-col items-center"
-                      >
-                        <span className="text-lg font-black text-rose-700 tracking-tighter leading-none">{step.delayed}</span>
-                        <span className="text-[8px] font-black text-rose-400 uppercase tracking-widest mt-1">Quá hạn</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedChildStep(step.name);
-                          setStatusFilter('ontime');
-                          setView('projects');
-                        }}
-                        className="bg-emerald-50/50 p-2 rounded-xl border border-emerald-100/50 flex flex-col items-center"
-                      >
-                        <span className="text-lg font-black text-emerald-700 tracking-tighter leading-none">{step.ontime}</span>
-                        <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mt-1">Còn hạn</span>
-                      </button>
+                    <div className={`grid gap-2 ${statusFilter === 'all' ? 'grid-cols-3' : 'grid-cols-1'}`}>
+                      {statusFilter === 'all' && (
+                        <button
+                          onClick={() => {
+                            setSelectedChildStep(step.name);
+                            setStatusFilter('all');
+                            setView('projects');
+                          }}
+                          className="bg-blue-50/50 p-2 rounded-xl border border-blue-100/50 flex flex-col items-center"
+                        >
+                          <span className="text-lg font-black text-blue-700 tracking-tighter leading-none">{step.total}</span>
+                          <span className="text-[8px] font-black text-blue-400 uppercase tracking-widest mt-1">Tổng</span>
+                        </button>
+                      )}
+                      {(statusFilter === 'all' || statusFilter === 'delayed') && (
+                        <button
+                          onClick={() => {
+                            setSelectedChildStep(step.name);
+                            setStatusFilter('delayed');
+                            setView('projects');
+                          }}
+                          className="bg-rose-50/50 p-2 rounded-xl border border-rose-100/50 flex flex-col items-center"
+                        >
+                          <span className="text-lg font-black text-rose-700 tracking-tighter leading-none">{step.delayed}</span>
+                          <span className="text-[8px] font-black text-rose-400 uppercase tracking-widest mt-1">Quá hạn</span>
+                        </button>
+                      )}
+                      {(statusFilter === 'all' || statusFilter === 'ontime') && (
+                        <button
+                          onClick={() => {
+                            setSelectedChildStep(step.name);
+                            setStatusFilter('ontime');
+                            setView('projects');
+                          }}
+                          className="bg-emerald-50/50 p-2 rounded-xl border border-emerald-100/50 flex flex-col items-center"
+                        >
+                          <span className="text-lg font-black text-emerald-700 tracking-tighter leading-none">{step.ontime}</span>
+                          <span className="text-[8px] font-black text-emerald-400 uppercase tracking-widest mt-1">Còn hạn</span>
+                        </button>
+                      )}
                     </div>
                   </motion.div>
                 ))}
@@ -924,7 +1140,7 @@ export default function AgencyProjectStats({
                 </button>
                 <div>
                   <h2 className="text-xl font-black text-slate-900 leading-tight">
-                    {selectedChildStep || selectedParentStep || selectedProjectStage || selectedInvestor || selectedDepartment || selectedAgency?.name || 'Tất cả dự án'}
+                    {selectedChildStep || selectedParentStep || (selectedProcess ? INITIAL_PROCESSES.find(p => p.id === selectedProcess)?.name : null) || selectedProjectStage || selectedInvestor || selectedDepartment || selectedAgency?.name || 'Tất cả dự án'}
                   </h2>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Danh sách dự án</p>
@@ -944,6 +1160,12 @@ export default function AgencyProjectStats({
                       <>
                         <ChevronRight size={12} className="text-slate-300" />
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{selectedInvestor}</span>
+                      </>
+                    )}
+                    {selectedProcess && (
+                      <>
+                        <ChevronRight size={12} className="text-slate-300" />
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{INITIAL_PROCESSES.find(p => p.id === selectedProcess)?.name || selectedProcess}</span>
                       </>
                     )}
                     {selectedProjectStage && (
@@ -990,9 +1212,9 @@ export default function AgencyProjectStats({
                             key={project.id} 
                             className="hover:bg-slate-50/50 transition-colors group cursor-pointer"
                             onClick={() => {
-                              setUpdatingProgressProject(project);
-                              setUpdateContent(project.progress_status_2026 || '');
-                              setAttachments([]);
+                              if (onProjectClick) {
+                                onProjectClick(project);
+                              }
                             }}
                           >
                             <td className="p-4 text-xs font-bold text-slate-500">{project.code}</td>

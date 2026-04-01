@@ -242,6 +242,7 @@ export default function App() {
               locations={locations}
               investors={investors}
               projectSteps={projectSteps}
+              onProjectClick={setSelectedProject}
             />
           )}
           {activeTab === 'tasks' && <TasksView />}
