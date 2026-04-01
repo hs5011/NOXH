@@ -15,14 +15,17 @@ const menuItems = [
     { id: 'dashboard-app', name: 'Dashboard app', icon: LayoutDashboard },
   ]},
   { group: 'QUẢN LÝ TIẾN ĐỘ DA HIỆN TẠI', items: [
+     { id: 'agency-project-stats', name: 'Thống kê theo cơ quan', icon: BarChart3 },
+     { id: 'projects', name: 'Danh sách dự án', icon: Building2 },
     { id: 'gantt-dashboard-noxh', name: 'Sơ đồ Gantt dự án NOXH', icon: BarChart3 },
-    { id: 'annual-update', name: 'Cập nhật tiến độ năm', icon: Clock },
-    { id: 'agency-project-stats', name: 'Thống kê theo cơ quan', icon: BarChart3 },
-  ]},
-  { group: 'QUẢN LÝ', items: [
-    { id: 'projects', name: 'Danh sách dự án', icon: Building2 },
     { id: 'process-gantt', name: 'Sơ đồ Gantt quy trình', icon: GitBranch },
+   // { id: 'annual-update', name: 'Cập nhật tiến độ năm', icon: Clock },
+   
   ]},
+  // { group: 'QUẢN LÝ', items: [
+    
+   
+  // ]},
   { group: 'HỆ THỐNG', items: [
     { id: 'step-management', name: 'Danh mục quy trình', icon: Layers },
     { id: 'investor-management', name: 'Danh mục CĐT', icon: Building2 },
