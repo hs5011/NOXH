@@ -5,7 +5,7 @@ import {
   MapPin, User, Search, Bell, Menu,
   CheckCircle2, TrendingUp, Filter, Circle,
   FileCheck, ClipboardList, Layers, Calendar, X,
-  ArrowLeft, Download, Maximize2, Save, Pin, Check, History
+  ArrowLeft, Maximize2, Save, Pin, Check, History
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -1955,11 +1955,6 @@ function DashboardContent({
                <span className="px-2 py-0.5 bg-white/20 text-white text-[9px] font-black rounded uppercase tracking-widest">{selectedProject.code}</span>
             </div>
             <h1 className="text-xl font-black tracking-tight leading-tight uppercase">CHI TIẾT DỰ ÁN GANTT</h1>
-          </div>
-          <div className="flex gap-2">
-            <button className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition-colors">
-              <Download size={20} />
-            </button>
           </div>
         </div>
 

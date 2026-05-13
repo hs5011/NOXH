@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   ArrowLeft, MapPin, Building2, Calendar, Clock, 
-  ChevronRight, Download, Filter, Maximize2, X, Save, Pin, Check
+  ChevronRight, Filter, Maximize2, X, Save, Pin, Check
 } from 'lucide-react';
 import { MOCK_PROGRESS_DATA } from '../data/mockData';
 import { parseDate, formatDate } from '../lib/projectUtils';
