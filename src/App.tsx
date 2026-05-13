@@ -90,6 +90,7 @@ export default function App() {
   const [preselectedInvestor, setPreselectedInvestor] = useState<string | undefined>(undefined);
   const [tphcmListTitle, setTphcmListTitle] = useState('');
   const [tphcmListProjects, setTphcmListProjects] = useState<any[]>([]);
+  const [ganttBackTab, setGanttBackTab] = useState('gantt-dashboard-noxh');
 
   const visibleProjects = useMemo(() => {
     if (!currentUser) return [];
@@ -260,11 +261,20 @@ export default function App() {
               projects={visibleProjects}
               onCreateClick={() => setShowCreateModal(true)} 
               onNavigateToProjects={handleNavigateToProjects}
-              onProjectClick={setSelectedProject}
+              onProjectClick={(project: any) => {
+                setSelectedGanttProject(project);
+                setActiveTab('gantt-project-detail');
+                setGanttBackTab('dashboard');
+              }}
               processingAgencies={processingAgencies}
               projectStages={projectStages}
               processes={processes}
               currentUser={currentUser}
+              onSeeProjects={(title: string, projects: any[]) => {
+                setTphcmListTitle(title);
+                setTphcmListProjects(projects);
+                setActiveTab('dashboard-tphcm-list');
+              }}
             />
           )}
           {activeTab === 'dashboard-app' && (
@@ -277,23 +287,16 @@ export default function App() {
               currentUser={currentUser}
             />
           )}
-          {activeTab === 'dashboard-tphcm' && (
-            <DashboardTPHCM 
-              projects={visibleProjects}
-              onBack={() => setActiveTab('dashboard')}
-              onSeeProjects={(title, projects) => {
-                setTphcmListTitle(title);
-                setTphcmListProjects(projects);
-                setActiveTab('dashboard-tphcm-list');
-              }}
-            />
-          )}
           {activeTab === 'dashboard-tphcm-list' && (
             <TPHCMProjectList 
               title={tphcmListTitle}
               projects={tphcmListProjects}
-              onBack={() => setActiveTab('dashboard-tphcm')}
-              onProjectClick={setSelectedProject}
+              onBack={() => setActiveTab('dashboard')}
+              onProjectClick={(project: any) => {
+                setSelectedGanttProject(project);
+                setActiveTab('gantt-project-detail');
+                setGanttBackTab('dashboard-tphcm-list');
+              }}
             />
           )}
           {activeTab === 'projects' && (
@@ -331,13 +334,14 @@ export default function App() {
               onProjectClick={(project) => {
                 setSelectedGanttProject(project);
                 setActiveTab('gantt-project-detail');
+                setGanttBackTab('gantt-dashboard-noxh');
               }}
             />
           )}
           {activeTab === 'gantt-project-detail' && (
             <ProjectGanttDetail 
               project={selectedGanttProject}
-              onBack={() => setActiveTab('gantt-dashboard-noxh')}
+              onBack={() => setActiveTab(ganttBackTab)}
             />
           )}
           {activeTab === 'process-gantt' && <ProcessGanttView projects={visibleProjects} />}
@@ -350,7 +354,11 @@ export default function App() {
               locations={locations}
               investors={investors}
               projectSteps={projectSteps}
-              onProjectClick={setSelectedProject}
+              onProjectClick={(project: any) => {
+                setSelectedGanttProject(project);
+                setActiveTab('gantt-project-detail');
+                setGanttBackTab('agency-project-stats');
+              }}
               currentUser={currentUser}
             />
           )}
@@ -423,7 +431,7 @@ export default function App() {
           )}
           {activeTab === 'role-management' && <ListManagement items={roles} setItems={setRoles} title="Danh mục vai trò" />}
           
-          {!['dashboard', 'dashboard-app', 'dashboard-tphcm', 'dashboard-tphcm-list', 'projects', 'gis', 'gantt', 'gantt-dashboard-noxh', 'gantt-project-detail', 'process-gantt', 'annual-update', 'agency-project-stats', 'tasks', 'documents', 'kpi', 'settings', 'investor-management', 'building-grade-management', 'project-category-management', 'project-group-management', 'project-status-management', 'project-stage-management', 'funding-source-management', 'location-management', 'housing-update', 'step-status-management', 'priority-management', 'result-management', 'step-management', 'agency-management', 'project-step-management', 'user-management', 'role-management', 'sidebar-open'].includes(activeTab) && (
+          {!['dashboard', 'dashboard-app', 'dashboard-tphcm-list', 'projects', 'gis', 'gantt', 'gantt-dashboard-noxh', 'gantt-project-detail', 'process-gantt', 'annual-update', 'agency-project-stats', 'tasks', 'documents', 'kpi', 'settings', 'investor-management', 'building-grade-management', 'project-category-management', 'project-group-management', 'project-status-management', 'project-stage-management', 'funding-source-management', 'location-management', 'housing-update', 'step-status-management', 'priority-management', 'result-management', 'step-management', 'agency-management', 'project-step-management', 'user-management', 'role-management', 'sidebar-open'].includes(activeTab) && (
             <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-4">
               <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
                 <Settings size={32} />

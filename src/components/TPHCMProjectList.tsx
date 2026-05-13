@@ -112,10 +112,9 @@ const TPHCMProjectList: React.FC<TPHCMProjectListProps> = ({ title, projects, on
 
           {/* Table Header */}
           <div className="hidden md:grid grid-cols-12 gap-4 px-8 py-4 bg-white border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-            <div className="col-span-4">Thông tin dự án</div>
-            <div className="col-span-3">Chủ đầu tư / Địa điểm</div>
+            <div className="col-span-5">Thông tin dự án</div>
+            <div className="col-span-4">Chủ đầu tư / Địa điểm</div>
             <div className="col-span-2 text-center">Số căn / Diện tích</div>
-            <div className="col-span-2">Tiến độ / Trạng thái</div>
             <div className="col-span-1 text-center">Thao tác</div>
           </div>
 
@@ -129,7 +128,7 @@ const TPHCMProjectList: React.FC<TPHCMProjectListProps> = ({ title, projects, on
                   className={`group grid grid-cols-1 md:grid-cols-12 gap-4 px-4 py-6 md:px-8 hover:bg-blue-50/30 transition-all cursor-pointer border-b border-slate-50 last:border-0`}
                 >
                   {/* Info */}
-                  <div className="col-span-1 md:col-span-4 flex gap-4">
+                  <div className="col-span-1 md:col-span-5 flex gap-4">
                     <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-white group-hover:text-blue-600 group-hover:shadow-sm transition-all shrink-0">
                       <Building size={24} />
                     </div>
@@ -149,7 +148,7 @@ const TPHCMProjectList: React.FC<TPHCMProjectListProps> = ({ title, projects, on
                   </div>
 
                   {/* Investor / Location */}
-                  <div className="col-span-1 md:col-span-3 flex flex-col justify-center text-left">
+                  <div className="col-span-1 md:col-span-4 flex flex-col justify-center text-left">
                     <div className="flex items-center gap-2 text-xs font-bold text-slate-700 mb-1">
                       <Building2 size={14} className="text-slate-300" />
                       <span className="truncate">{project.investor}</span>
@@ -161,7 +160,7 @@ const TPHCMProjectList: React.FC<TPHCMProjectListProps> = ({ title, projects, on
                   </div>
 
                   {/* Units / Area */}
-                  <div className="col-span-1 md:col-span-2 flex md:flex-col items-center justify-between md:justify-center gap-2">
+                  <div className="col-span-1 md:col-span-2 flex md:flex-col items-center justify-between md:justify-center gap-2 text-center">
                     <div className="text-center">
                       <p className="text-[10px] md:hidden font-black text-slate-400 uppercase mb-1">Số căn</p>
                       <span className="text-sm font-black text-slate-800">{formatNum(project.apartmentCount || 0)}</span>
@@ -170,24 +169,6 @@ const TPHCMProjectList: React.FC<TPHCMProjectListProps> = ({ title, projects, on
                     <div className="text-center">
                       <p className="text-[10px] md:hidden font-black text-slate-400 uppercase mb-1">Diện tích</p>
                       <span className="text-xs font-bold text-slate-400">{project.totalArea?.toFixed(2) || '0.00'} ha</span>
-                    </div>
-                  </div>
-
-                  {/* Progress / Status */}
-                  <div className="col-span-1 md:col-span-2 flex flex-col justify-center gap-2">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-blue-600 transition-all duration-1000" 
-                          style={{ width: `${project.progress}%` }}
-                        ></div>
-                      </div>
-                      <span className="text-xs font-black text-blue-600 whitespace-nowrap">{project.progress}%</span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <span className={`px-2 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-tight ${getStatusColor(project.status)}`}>
-                        {project.status === 'OnTime' ? 'Đúng tiến độ' : project.status === 'Delayed' ? 'Chậm tiến độ' : project.status}
-                      </span>
                     </div>
                   </div>
 

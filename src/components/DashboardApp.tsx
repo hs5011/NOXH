@@ -1029,19 +1029,19 @@ function DashboardContent({
                   setCustomFilterType('licensed');
                   navigateTo('projects');
                 }}
-                className="bg-blue-600 p-5 rounded-[28px] cursor-pointer hover:shadow-lg hover:shadow-blue-200 transition-all active:scale-[0.98] flex items-center justify-between group text-white border-none"
+                className="bg-sky-50/30 border border-sky-100 p-5 rounded-[28px] cursor-pointer hover:shadow-lg hover:shadow-sky-100/50 transition-all active:scale-[0.98] flex items-center justify-between group"
               >
                 <div className="flex items-center gap-4">
-                   <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md group-hover:scale-110 transition-transform">
+                   <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm text-sky-600 group-hover:scale-110 transition-transform">
                      <Building2 size={24} />
                    </div>
                    <div>
-                     <h3 className="text-[10px] font-black text-blue-100 uppercase tracking-widest mb-0.5">GP xây dựng</h3>
-                     <p className="text-xs font-bold text-blue-100/60 transition-opacity">Sẵn sàng thi công</p>
+                     <h3 className="text-[10px] font-black text-sky-600 uppercase tracking-widest mb-0.5">GP xây dựng</h3>
+                     <p className="text-xs font-bold text-slate-400">Sẵn sàng thi công</p>
                    </div>
                 </div>
                 <div className="text-right">
-                  <span className="text-3xl font-black">
+                  <span className="text-3xl font-black text-sky-700">
                     {projects.filter(p => {
                       const isLicensed = (p.gpxaydung_nn_date === 'X' || p.gpxaydung_cdt_date === 'X');
                       return p.stage === 'CHUẨN BỊ ĐẦU TƯ' && isLicensed;

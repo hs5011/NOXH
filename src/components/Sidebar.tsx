@@ -15,8 +15,7 @@ interface SidebarProps {
 const menuItems = [
   { group: 'ĐIỀU HÀNH', items: [
     { id: 'dashboard', name: 'Tổng quan', icon: LayoutDashboard },
-    { id: 'dashboard-app', name: 'Dashboard app', icon: LayoutDashboard },
-    { id: 'dashboard-tphcm', name: 'Dashboard TPHCM', icon: BarChart3 },
+    { id: 'dashboard-app', name: 'Dashboard App', icon: LayoutDashboard },
   ]},
   { group: 'QUẢN LÝ TIẾN ĐỘ DA HIỆN TẠI', items: [
     { id: 'gantt-dashboard-noxh', name: 'Sơ đồ Gantt dự án NOXH', icon: BarChart3 },
