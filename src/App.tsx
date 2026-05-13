@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Sidebar from './components/Sidebar';
 import DashboardView from './components/Dashboard';
 import DashboardApp from './components/DashboardApp';
+import DashboardTPHCM from './components/DashboardTPHCM';
+import TPHCMProjectList from './components/TPHCMProjectList';
 import ProjectList from './components/ProjectList';
 import CreateProject from './components/CreateProject';
 import ProjectDetail from './components/ProjectDetail';
@@ -23,13 +25,19 @@ import ProjectGroupManagement from './components/ProjectGroupManagement';
 import FundingSourceManagement from './components/FundingSourceManagement';
 import AnnualProgressUpdate from './components/AnnualProgressUpdate';
 import AgencyProjectStats from './components/AgencyProjectStats';
+import UserManagement from './components/UserManagement';
 import StepManagementView, { Process } from './components/StepManagementView';
-import { Bell, Search, User, Menu, Settings } from 'lucide-react';
+import ProjectGanttDetail from './components/ProjectGanttDetail';
+import Login from './components/Login';
+import { UserAccount } from './types';
+import { Bell, Search, User, Menu, Settings, LogOut } from 'lucide-react';
 
 import { 
   INITIAL_PROJECTS, 
   INITIAL_INVESTORS, 
   INITIAL_PROJECT_GROUPS, 
+  INITIAL_PROJECT_CATEGORIES,
+  INITIAL_BUILDING_GRADES,
   INITIAL_PROJECT_STATUSES, 
   INITIAL_PROJECT_STAGES, 
   INITIAL_PROJECT_STEPS, 
@@ -40,13 +48,17 @@ import {
   INITIAL_PROCESSING_RESULTS, 
   INITIAL_LOCATIONS, 
   INITIAL_PROCESSES, 
-  INITIAL_FOLLOWERS 
+  INITIAL_FOLLOWERS,
+  INITIAL_USERS,
+  INITIAL_ROLES
 } from './data/appData';
 
 export default function App() {
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedProject, setSelectedProject] = useState<any>(null);
+  const [selectedGanttProject, setSelectedGanttProject] = useState<any>(null);
   const [projectToUpdate, setProjectToUpdate] = useState<any>(null);
   const [projectToEdit, setProjectToEdit] = useState<any>(null);
   const [projectToUpdatePlan, setProjectToUpdatePlan] = useState<any>(null);
@@ -58,6 +70,8 @@ export default function App() {
   const [projects, setProjects] = useState<any[]>(INITIAL_PROJECTS);
   const [investors, setInvestors] = useState(INITIAL_INVESTORS);
   const [projectGroups, setProjectGroups] = useState(INITIAL_PROJECT_GROUPS);
+  const [projectCategories, setProjectCategories] = useState(INITIAL_PROJECT_CATEGORIES);
+  const [buildingGrades, setBuildingGrades] = useState(INITIAL_BUILDING_GRADES);
   const [projectStatuses, setProjectStatuses] = useState(INITIAL_PROJECT_STATUSES);
   const [projectStages, setProjectStages] = useState(INITIAL_PROJECT_STAGES);
   const [projectSteps, setProjectSteps] = useState(INITIAL_PROJECT_STEPS);
@@ -70,7 +84,45 @@ export default function App() {
   const [reportDate, setReportDate] = useState('31/12/2026');
   const [processes, setProcesses] = useState<Process[]>(INITIAL_PROCESSES);
   const [followers, setFollowers] = useState(INITIAL_FOLLOWERS);
+  const [users, setUsers] = useState<UserAccount[]>(INITIAL_USERS);
+  const [roles, setRoles] = useState(INITIAL_ROLES);
   const [globalSearch, setGlobalSearch] = useState('');
+  const [preselectedInvestor, setPreselectedInvestor] = useState<string | undefined>(undefined);
+  const [tphcmListTitle, setTphcmListTitle] = useState('');
+  const [tphcmListProjects, setTphcmListProjects] = useState<any[]>([]);
+
+  const visibleProjects = useMemo(() => {
+    if (!currentUser) return [];
+    if (currentUser.roleId === 'Admin') return projects;
+    if (currentUser.userType === 'agency' && currentUser.agencyId === '1') return projects; // Sở Xây dựng
+    
+    if (currentUser.userType === 'agency') {
+      const agency = processingAgencies.find(a => a.id === currentUser.agencyId);
+      return projects.filter(p => p.currentAgency === agency?.name);
+    }
+    
+    if (currentUser.userType === 'investor') {
+      return projects.filter(p => p.investor === currentUser.investorId);
+    }
+    
+    return [];
+  }, [projects, currentUser, processingAgencies]);
+
+  const visibleAgencies = useMemo(() => {
+    if (!currentUser) return [];
+    if (currentUser.roleId === 'Admin') return processingAgencies;
+    if (currentUser.userType === 'agency' && currentUser.agencyId === '1') return processingAgencies; // Sở Xây dựng
+    
+    if (currentUser.userType === 'agency') {
+      return processingAgencies.filter(a => a.id === currentUser.agencyId);
+    }
+    
+    if (currentUser.userType === 'investor') {
+      return processingAgencies;
+    }
+    
+    return processingAgencies;
+  }, [processingAgencies, currentUser]);
 
   const handleCreateSuccess = (newProject?: any) => {
     if (newProject) {
@@ -108,6 +160,10 @@ export default function App() {
 
 
   const handleNavigateToProjects = (filter?: any) => {
+    if (filter?.view === 'all-progress') {
+      setActiveTab('process-gantt');
+      return;
+    }
     setProjectFilter(filter || null);
     setActiveTab('projects');
   };
@@ -124,14 +180,26 @@ export default function App() {
     if (tab !== 'projects') {
       setProjectFilter(null);
     }
+    if (tab !== 'user-management') {
+      setPreselectedInvestor(undefined);
+    }
   };
+
+  if (!currentUser) {
+    return <Login onLogin={setCurrentUser} />;
+  }
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden relative">
       <div className={`fixed inset-0 bg-slate-900/50 z-40 lg:hidden transition-opacity ${activeTab === 'sidebar-open' ? 'opacity-100 visible' : 'opacity-0 invisible'}`} onClick={() => setActiveTab('dashboard')} />
       
       <div className={`fixed lg:static inset-y-0 left-0 z-50 transform lg:transform-none transition-transform duration-300 ${activeTab === 'sidebar-open' ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-        <Sidebar activeTab={activeTab === 'sidebar-open' ? 'dashboard' : activeTab} onNavigate={(tab) => { setActiveTab(tab); }} />
+        <Sidebar 
+          activeTab={activeTab === 'sidebar-open' ? 'dashboard' : activeTab} 
+          onNavigate={(tab) => { setActiveTab(tab); }} 
+          currentUser={currentUser}
+          onLogout={() => setCurrentUser(null)}
+        />
       </div>
       
       <div className="flex-1 flex flex-col min-w-0">
@@ -168,40 +236,70 @@ export default function App() {
             <div className="h-8 w-[1px] bg-slate-200 mx-2"></div>
             <div className="flex items-center gap-3">
               <div className="text-right hidden md:block">
-                <p className="text-xs font-bold">Nguyễn Văn A</p>
-                <p className="text-[10px] text-slate-400 font-medium">Lãnh đạo Sở</p>
+                <p className="text-xs font-bold">{currentUser.fullName}</p>
+                <p className="text-[10px] text-slate-400 font-medium">{currentUser.roleId}</p>
               </div>
               <div className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600">
                 <User size={20} />
               </div>
             </div>
+            <div className="h-8 w-[1px] bg-slate-200 mx-1"></div>
+            <button 
+              onClick={() => setCurrentUser(null)}
+              className="p-2 hover:bg-rose-50 rounded-lg text-slate-500 hover:text-rose-600 transition-colors group relative"
+              title="Thoát"
+            >
+              <LogOut size={20} />
+            </button>
           </div>
         </header>
 
         <main className={`flex-1 overflow-y-auto ${(activeTab === 'dashboard-app' || activeTab === 'agency-project-stats') ? 'p-0' : 'p-4 sm:p-8'}`}>
           {activeTab === 'dashboard' && (
             <DashboardView 
-              projects={projects}
+              projects={visibleProjects}
               onCreateClick={() => setShowCreateModal(true)} 
               onNavigateToProjects={handleNavigateToProjects}
+              onProjectClick={setSelectedProject}
               processingAgencies={processingAgencies}
               projectStages={projectStages}
               processes={processes}
+              currentUser={currentUser}
             />
           )}
           {activeTab === 'dashboard-app' && (
             <DashboardApp 
-              projects={projects}
-              processingAgencies={processingAgencies} 
+              projects={visibleProjects}
+              processingAgencies={visibleAgencies} 
               investors={investors}
               projectStages={projectStages}
               locations={locations}
+              currentUser={currentUser}
+            />
+          )}
+          {activeTab === 'dashboard-tphcm' && (
+            <DashboardTPHCM 
+              projects={visibleProjects}
+              onBack={() => setActiveTab('dashboard')}
+              onSeeProjects={(title, projects) => {
+                setTphcmListTitle(title);
+                setTphcmListProjects(projects);
+                setActiveTab('dashboard-tphcm-list');
+              }}
+            />
+          )}
+          {activeTab === 'dashboard-tphcm-list' && (
+            <TPHCMProjectList 
+              title={tphcmListTitle}
+              projects={tphcmListProjects}
+              onBack={() => setActiveTab('dashboard-tphcm')}
+              onProjectClick={setSelectedProject}
             />
           )}
           {activeTab === 'projects' && (
             <ProjectList 
               key={refreshKey} 
-              projects={projects}
+              projects={visibleProjects}
               filter={projectFilter}
               onProjectClick={setSelectedProject} 
               onEditClick={handleEditProject}
@@ -223,26 +321,37 @@ export default function App() {
           )}
 
           {activeTab === 'gis' && <GISView />}
-          {activeTab === 'gantt' && <GanttView projects={projects} />}
+          {activeTab === 'gantt' && <GanttView projects={visibleProjects} />}
           {activeTab === 'gantt-dashboard-noxh' && (
             <GanttDashboardNOXH 
-              projects={projects}
+              projects={visibleProjects}
               reportDate={reportDate} 
               projectStatuses={projectStatuses}
               projectStages={projectStages}
+              onProjectClick={(project) => {
+                setSelectedGanttProject(project);
+                setActiveTab('gantt-project-detail');
+              }}
             />
           )}
-          {activeTab === 'process-gantt' && <ProcessGanttView projects={projects} />}
-          {activeTab === 'annual-update' && <AnnualProgressUpdate projects={projects} reportDate={reportDate} setReportDate={setReportDate} />}
+          {activeTab === 'gantt-project-detail' && (
+            <ProjectGanttDetail 
+              project={selectedGanttProject}
+              onBack={() => setActiveTab('gantt-dashboard-noxh')}
+            />
+          )}
+          {activeTab === 'process-gantt' && <ProcessGanttView projects={visibleProjects} />}
+          {activeTab === 'annual-update' && <AnnualProgressUpdate projects={visibleProjects} reportDate={reportDate} setReportDate={setReportDate} />}
           {activeTab === 'agency-project-stats' && (
             <AgencyProjectStats 
-              projects={projects} 
-              processingAgencies={processingAgencies} 
+              projects={visibleProjects} 
+              processingAgencies={visibleAgencies} 
               projectStages={projectStages}
               locations={locations}
               investors={investors}
               projectSteps={projectSteps}
               onProjectClick={setSelectedProject}
+              currentUser={currentUser}
             />
           )}
           {activeTab === 'tasks' && <TasksView />}
@@ -266,7 +375,31 @@ export default function App() {
           {activeTab === 'documents' && <DocumentsView />}
           {activeTab === 'kpi' && <KPIView />}
           {activeTab === 'settings' && <SettingsView />}
-          {activeTab === 'investor-management' && <ListManagement items={investors} setItems={setInvestors} title="Chủ đầu tư" />}
+          {activeTab === 'investor-management' && (
+            <ListManagement 
+              items={investors} 
+              setItems={setInvestors} 
+              title="Chủ đầu tư" 
+              onAddUser={(investor) => {
+                setPreselectedInvestor(investor);
+                setActiveTab('user-management');
+              }}
+            />
+          )}
+          {activeTab === 'building-grade-management' && (
+            <ListManagement 
+              items={buildingGrades} 
+              setItems={setBuildingGrades} 
+              title="Cấp công trình" 
+            />
+          )}
+          {activeTab === 'project-category-management' && (
+            <ListManagement 
+              items={projectCategories} 
+              setItems={setProjectCategories} 
+              title="Phân loại dự án" 
+            />
+          )}
           {activeTab === 'project-group-management' && <ProjectGroupManagement projectGroups={projectGroups} setProjectGroups={setProjectGroups} />}
           {activeTab === 'project-status-management' && <ListManagement items={projectStatuses} setItems={setProjectStatuses} title="Trạng thái dự án" />}
           {activeTab === 'project-stage-management' && <ListManagement items={projectStages} setItems={setProjectStages} title="Giai đoạn dự án" />}
@@ -279,8 +412,18 @@ export default function App() {
           {activeTab === 'location-management' && <LocationManagement locations={locations} setLocations={setLocations} />}
           {activeTab === 'step-management' && <StepManagementView processingAgencies={processingAgencies} processes={processes} setProcesses={setProcesses} projectStages={projectStages} />}
           {activeTab === 'follower-management' && <ListManagement items={followers} setItems={setFollowers} title="Người theo dõi" />}
+          {activeTab === 'user-management' && (
+            <UserManagement 
+              users={users} 
+              onUpdateUsers={setUsers} 
+              roles={roles} 
+              preselectedInvestor={preselectedInvestor}
+              onClearInvestor={() => setPreselectedInvestor(undefined)}
+            />
+          )}
+          {activeTab === 'role-management' && <ListManagement items={roles} setItems={setRoles} title="Danh mục vai trò" />}
           
-          {!['dashboard', 'dashboard-app', 'projects', 'gis', 'gantt', 'gantt-dashboard-noxh', 'process-gantt', 'annual-update', 'agency-project-stats', 'tasks', 'documents', 'kpi', 'settings', 'investor-management', 'project-group-management', 'project-status-management', 'project-stage-management', 'funding-source-management', 'location-management', 'housing-update', 'step-status-management', 'priority-management', 'result-management', 'step-management', 'agency-management', 'project-step-management'].includes(activeTab) && (
+          {!['dashboard', 'dashboard-app', 'dashboard-tphcm', 'dashboard-tphcm-list', 'projects', 'gis', 'gantt', 'gantt-dashboard-noxh', 'gantt-project-detail', 'process-gantt', 'annual-update', 'agency-project-stats', 'tasks', 'documents', 'kpi', 'settings', 'investor-management', 'building-grade-management', 'project-category-management', 'project-group-management', 'project-status-management', 'project-stage-management', 'funding-source-management', 'location-management', 'housing-update', 'step-status-management', 'priority-management', 'result-management', 'step-management', 'agency-management', 'project-step-management', 'user-management', 'role-management', 'sidebar-open'].includes(activeTab) && (
             <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-4">
               <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
                 <Settings size={32} />
@@ -296,6 +439,8 @@ export default function App() {
             investors={investors}
             locations={locations}
             projectGroups={projectGroups}
+            projectCategories={projectCategories}
+            buildingGrades={buildingGrades}
             fundingSources={fundingSources}
             projectStages={projectStages}
             projectSteps={projectSteps}

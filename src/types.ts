@@ -26,3 +26,17 @@ export interface WorkflowStep {
   deadline: string;
   daysLeft?: number;
 }
+
+export interface UserAccount {
+  id: string;
+  fullName: string;
+  phone: string;
+  email: string;
+  username: string;
+  password?: string;
+  userType: 'agency' | 'investor';
+  agencyId?: string;
+  department?: string;
+  investorId?: string;
+  roleId: string;
+}

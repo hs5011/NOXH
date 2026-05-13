@@ -4,6 +4,7 @@ import DatePicker, { registerLocale } from 'react-datepicker';
 import { vi } from 'date-fns/locale';
 import "react-datepicker/dist/react-datepicker.css";
 import { Process } from './StepManagementView';
+import { parseDate } from '../lib/projectUtils';
 
 registerLocale('vi', vi);
 
@@ -98,7 +99,7 @@ export default function UpdatePlanModal({ project, processes, onClose, onSuccess
                       </div>
                       <div className="col-span-3">
                         <DatePicker 
-                          selected={milestones[child.id]?.investor ? new Date(milestones[child.id].investor) : null}
+                          selected={parseDate(milestones[child.id]?.investor)}
                           onChange={(date) => handleMilestoneChange(child.id, 'investor', date ? date.toISOString().split('T')[0] : '')}
                           dateFormat="dd/MM/yyyy"
                           placeholderText="Chọn ngày"
@@ -108,7 +109,7 @@ export default function UpdatePlanModal({ project, processes, onClose, onSuccess
                       </div>
                       <div className="col-span-3">
                         <DatePicker 
-                          selected={milestones[child.id]?.agency ? new Date(milestones[child.id].agency) : null}
+                          selected={parseDate(milestones[child.id]?.agency)}
                           onChange={(date) => handleMilestoneChange(child.id, 'agency', date ? date.toISOString().split('T')[0] : '')}
                           dateFormat="dd/MM/yyyy"
                           placeholderText="Chọn ngày"

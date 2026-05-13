@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Search, Filter, Calendar, Clock, AlertCircle, 
   Save, CheckCircle2, Building2, ChevronRight, 
-  ChevronLeft, Download, Info, Edit3, X,
+  ChevronLeft, Download, Info, Edit3, X, Check,
   ArrowUpDown, ArrowUp, ArrowDown, Layers,
   Paperclip, Upload, Trash2, File
 } from 'lucide-react';
@@ -11,18 +11,20 @@ import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import { format, parse, isValid } from 'date-fns';
 import { utils, writeFile } from 'xlsx';
+import { parseDate as projectParseDate, formatDate as projectFormatDate } from '../lib/projectUtils';
 
-// Helper to parse dd/mm/yyyy to Date
+// Helper to parse dates robustly
 const parseDate = (dateStr: string | undefined): Date | null => {
-  if (!dateStr) return null;
-  const parsed = parse(dateStr, 'dd/MM/yyyy', new Date());
-  return isValid(parsed) ? parsed : null;
+  return projectParseDate(dateStr);
 };
 
 // Helper to format Date to dd/mm/yyyy
 const formatDate = (date: Date | null): string => {
-  if (!date) return '';
-  return format(date, 'dd/MM/yyyy');
+  if (!date || isNaN(date.getTime())) return '';
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
 };
 
 interface Project {
@@ -42,6 +44,8 @@ interface Project {
   pccc_nn_date?: string;
   htkt_dtm_cdt_date?: string;
   htkt_dtm_nn_date?: string;
+  baocaonckt_cdt_date?: string;
+  baocaonckt_nn_date?: string;
   gpxaydung_cdt_date?: string;
   gpxaydung_nn_date?: string;
   completion_date?: string;
@@ -102,8 +106,9 @@ export default function AnnualProgressUpdate({ projects: initialProjects = [], r
       "Chủ trương ĐT", "", 
       "QH 1/500", "", 
       "QĐ Giao đất", "", 
-      "PCCC", "", 
       "HTKT/ĐTM", "", 
+      "BC nghiên cứu KT", "",
+      "PCCC", "", 
       "GP Xây dựng", "", 
       "Hoàn thành", `Tiến độ đến ${reportDate}`
     ];
@@ -111,6 +116,7 @@ export default function AnnualProgressUpdate({ projects: initialProjects = [], r
     // Header Row 2
     const header2 = [
       "", "", "", 
+      "CĐT", "NN", 
       "CĐT", "NN", 
       "CĐT", "NN", 
       "CĐT", "NN", 
@@ -131,10 +137,12 @@ export default function AnnualProgressUpdate({ projects: initialProjects = [], r
       p.qh1500_nn_date || '',
       p.qdgiaodat_cdt_date || '',
       p.qdgiaodat_nn_date || '',
-      p.pccc_cdt_date || '',
-      p.pccc_nn_date || '',
       p.htkt_dtm_cdt_date || '',
       p.htkt_dtm_nn_date || '',
+      p.baocaonckt_cdt_date || '',
+      p.baocaonckt_nn_date || '',
+      p.pccc_cdt_date || '',
+      p.pccc_nn_date || '',
       p.gpxaydung_cdt_date || '',
       p.gpxaydung_nn_date || '',
       p.completion_date || '',
@@ -151,11 +159,12 @@ export default function AnnualProgressUpdate({ projects: initialProjects = [], r
       { s: { r: 0, c: 3 }, e: { r: 0, c: 4 } }, // Chủ trương ĐT
       { s: { r: 0, c: 5 }, e: { r: 0, c: 6 } }, // QH 1/500
       { s: { r: 0, c: 7 }, e: { r: 0, c: 8 } }, // QĐ Giao đất
-      { s: { r: 0, c: 9 }, e: { r: 0, c: 10 } }, // PCCC
-      { s: { r: 0, c: 11 }, e: { r: 0, c: 12 } }, // HTKT/ĐTM
-      { s: { r: 0, c: 13 }, e: { r: 0, c: 14 } }, // GP Xây dựng
-      { s: { r: 0, c: 15 }, e: { r: 1, c: 15 } }, // Hoàn thành
-      { s: { r: 0, c: 16 }, e: { r: 1, c: 16 } }, // Tiến độ
+      { s: { r: 0, c: 9 }, e: { r: 0, c: 10 } }, // HTKT/ĐTM
+      { s: { r: 0, c: 11 }, e: { r: 0, c: 12 } }, // BC NCKT
+      { s: { r: 0, c: 13 }, e: { r: 0, c: 14 } }, // PCCC
+      { s: { r: 0, c: 15 }, e: { r: 0, c: 16 } }, // GP Xây dựng
+      { s: { r: 0, c: 17 }, e: { r: 1, c: 17 } }, // Hoàn thành
+      { s: { r: 0, c: 18 }, e: { r: 1, c: 18 } }, // Tiến độ
     ];
 
     // Set column widths
@@ -163,7 +172,8 @@ export default function AnnualProgressUpdate({ projects: initialProjects = [], r
       { wch: 15 }, { wch: 40 }, { wch: 25 }, 
       { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, 
       { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, 
-      { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, 
+      { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+      { wch: 12 }, { wch: 12 }, 
       { wch: 15 }, { wch: 30 }
     ];
 
@@ -201,6 +211,40 @@ export default function AnnualProgressUpdate({ projects: initialProjects = [], r
   const currentProjects = showAll 
     ? filteredProjects 
     : filteredProjects.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const renderDateCell = (dateStr: string | undefined) => {
+    if (dateStr === 'X') {
+      return (
+        <div className="flex justify-center">
+          <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[9px] font-black uppercase shadow-sm leading-none whitespace-nowrap">
+            <Check size={10} strokeWidth={4} /> Đã xong
+          </span>
+        </div>
+      );
+    }
+    
+    if (!dateStr || dateStr === '-') return '-';
+    
+    // Format to dd/mm/yy
+    let d, m, y;
+    if (dateStr.includes('/')) {
+      const parts = dateStr.split('/');
+      if (parts.length !== 3) return dateStr;
+      [d, m, y] = parts;
+    } else if (dateStr.includes('-')) {
+      const parts = dateStr.split('-');
+      if (parts.length !== 3) return dateStr;
+      [y, m, d] = parts;
+    } else {
+      return dateStr;
+    }
+    
+    const day = d.padStart(2, '0');
+    const month = m.padStart(2, '0');
+    const year = y.length === 4 ? y.slice(-2) : y;
+    
+    return `${day}/${month}/${year}`;
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -254,14 +298,18 @@ export default function AnnualProgressUpdate({ projects: initialProjects = [], r
         </motion.div>
       )}
 
-      <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full border-separate border-spacing-0">
+      <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+        <div className="overflow-x-auto custom-scrollbar overflow-y-hidden">
+          <table className="w-full border-separate border-spacing-0 min-w-[2200px]">
             <thead>
               <tr className="bg-slate-50/80">
+                <th rowSpan={2} className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 border-r border-slate-100 sticky left-0 bg-slate-50/80 z-20 w-12">
+                  STT
+                </th>
                 <th 
+                  rowSpan={2}
                   onClick={() => handleSort('name')}
-                  className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 sticky left-0 bg-slate-50/80 z-10 cursor-pointer hover:text-blue-600 transition-colors"
+                  className="p-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 border-r border-slate-100 sticky left-12 bg-slate-50/80 z-20 cursor-pointer hover:text-blue-600 transition-colors w-[250px]"
                 >
                   <div className="flex items-center gap-1">
                     Dự án
@@ -270,15 +318,17 @@ export default function AnnualProgressUpdate({ projects: initialProjects = [], r
                     ) : <ArrowUpDown size={12} className="opacity-30" />}
                   </div>
                 </th>
-                <th colSpan={2} className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 border-l border-slate-100">Chủ trương ĐT</th>
-                <th colSpan={2} className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 border-l border-slate-100">QH 1/500</th>
-                <th colSpan={2} className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 border-l border-slate-100">QĐ Giao đất</th>
-                <th colSpan={2} className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 border-l border-slate-100">PCCC</th>
-                <th colSpan={2} className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 border-l border-slate-100">HTKT/ĐTM</th>
-                <th colSpan={2} className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 border-l border-slate-100">GP Xây dựng</th>
+                <th colSpan={2} className="p-4 text-center text-[10px] font-black text-blue-700 bg-[#E3F2FD] uppercase tracking-widest border-b border-blue-200 border-r border-blue-200">Chủ trương ĐT</th>
+                <th colSpan={2} className="p-4 text-center text-[10px] font-black text-purple-700 bg-[#F3E5F5] uppercase tracking-widest border-b border-purple-200 border-r border-purple-200">QH 1/500</th>
+                <th colSpan={2} className="p-4 text-center text-[10px] font-black text-emerald-700 bg-[#E8F5E9] uppercase tracking-widest border-b border-emerald-200 border-r border-emerald-200">QĐ Giao đất</th>
+                <th colSpan={2} className="p-4 text-center text-[10px] font-black text-amber-700 bg-[#FFFDE7] uppercase tracking-widest border-b border-amber-200 border-r border-amber-200">HTKT/ĐTM</th>
+                <th colSpan={2} className="p-4 text-center text-[10px] font-black text-rose-700 bg-[#FBE9E7] uppercase tracking-widest border-b border-rose-200 border-r border-rose-200">BC NCKT</th>
+                <th colSpan={2} className="p-4 text-center text-[10px] font-black text-pink-700 bg-[#FCE4EC] uppercase tracking-widest border-b border-pink-200 border-r border-pink-200">PCCC</th>
+                <th colSpan={2} className="p-4 text-center text-[10px] font-black text-cyan-700 bg-[#E0F7FA] uppercase tracking-widest border-b border-cyan-200 border-r border-cyan-200">GP Xây dựng</th>
                 <th 
+                  rowSpan={2}
                   onClick={() => handleSort('completion_date')}
-                  className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 border-l border-slate-100 cursor-pointer hover:text-blue-600 transition-colors"
+                  className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 border-r border-slate-100 cursor-pointer hover:text-blue-600 transition-colors bg-slate-50/80"
                 >
                   <div className="flex items-center justify-center gap-1">
                     Hoàn thành
@@ -287,63 +337,66 @@ export default function AnnualProgressUpdate({ projects: initialProjects = [], r
                     ) : <ArrowUpDown size={12} className="opacity-30" />}
                   </div>
                 </th>
-                <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 border-l border-slate-100">Tiến độ {reportDate}</th>
-                <th className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 border-l border-slate-100">Thao tác</th>
+                <th rowSpan={2} className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 border-r border-slate-100 bg-slate-50/80">Tiến độ {reportDate}</th>
+                <th rowSpan={2} className="p-4 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 bg-slate-50/80">Thao tác</th>
               </tr>
               <tr className="bg-slate-50/50">
-                <th className="border-b border-slate-100 sticky left-0 bg-slate-50/50 z-10"></th>
-                <th className="p-2 text-[9px] font-bold text-slate-400 uppercase border-b border-slate-100 border-l border-slate-100">CĐT</th>
-                <th className="p-2 text-[9px] font-bold text-slate-400 uppercase border-b border-slate-100 border-l border-slate-50">NN</th>
-                <th className="p-2 text-[9px] font-bold text-slate-400 uppercase border-b border-slate-100 border-l border-slate-100">CĐT</th>
-                <th className="p-2 text-[9px] font-bold text-slate-400 uppercase border-b border-slate-100 border-l border-slate-50">NN</th>
-                <th className="p-2 text-[9px] font-bold text-slate-400 uppercase border-b border-slate-100 border-l border-slate-100">CĐT</th>
-                <th className="p-2 text-[9px] font-bold text-slate-400 uppercase border-b border-slate-100 border-l border-slate-50">NN</th>
-                <th className="p-2 text-[9px] font-bold text-slate-400 uppercase border-b border-slate-100 border-l border-slate-100">CĐT</th>
-                <th className="p-2 text-[9px] font-bold text-slate-400 uppercase border-b border-slate-100 border-l border-slate-50">NN</th>
-                <th className="p-2 text-[9px] font-bold text-slate-400 uppercase border-b border-slate-100 border-l border-slate-100">CĐT</th>
-                <th className="p-2 text-[9px] font-bold text-slate-400 uppercase border-b border-slate-100 border-l border-slate-50">NN</th>
-                <th className="p-2 text-[9px] font-bold text-slate-400 uppercase border-b border-slate-100 border-l border-slate-100">CĐT</th>
-                <th className="p-2 text-[9px] font-bold text-slate-400 uppercase border-b border-slate-100 border-l border-slate-50">NN</th>
-                <th className="border-b border-slate-100 border-l border-slate-100"></th>
-                <th className="border-b border-slate-100 border-l border-slate-100"></th>
-                <th className="border-b border-slate-100 border-l border-slate-100"></th>
+                <th className="p-2 text-[9px] font-bold text-blue-700 bg-[#E3F2FD] uppercase border-b border-blue-100 border-r border-blue-100">CĐT</th>
+                <th className="p-2 text-[9px] font-bold text-blue-700 bg-[#E3F2FD] uppercase border-b border-blue-100 border-r border-blue-200">NN</th>
+                <th className="p-2 text-[9px] font-bold text-purple-700 bg-[#F3E5F5] uppercase border-b border-purple-100 border-r border-purple-100">CĐT</th>
+                <th className="p-2 text-[9px] font-bold text-purple-700 bg-[#F3E5F5] uppercase border-b border-purple-100 border-r border-purple-200">NN</th>
+                <th className="p-2 text-[9px] font-bold text-emerald-700 bg-[#E8F5E9] uppercase border-b border-emerald-100 border-r border-emerald-100">CĐT</th>
+                <th className="p-2 text-[9px] font-bold text-emerald-700 bg-[#E8F5E9] uppercase border-b border-emerald-100 border-r border-emerald-200">NN</th>
+                <th className="p-2 text-[9px] font-bold text-amber-700 bg-[#FFFDE7] uppercase border-b border-amber-100 border-r border-amber-100">CĐT</th>
+                <th className="p-2 text-[9px] font-bold text-amber-700 bg-[#FFFDE7] uppercase border-b border-amber-100 border-r border-amber-200">NN</th>
+                <th className="p-2 text-[9px] font-bold text-rose-700 bg-[#FBE9E7] uppercase border-b border-rose-100 border-r border-rose-100">CĐT</th>
+                <th className="p-2 text-[9px] font-bold text-rose-700 bg-[#FBE9E7] uppercase border-b border-rose-100 border-r border-rose-200">NN</th>
+                <th className="p-2 text-[9px] font-bold text-pink-700 bg-[#FCE4EC] uppercase border-b border-pink-100 border-r border-pink-100">CĐT</th>
+                <th className="p-2 text-[9px] font-bold text-pink-700 bg-[#FCE4EC] uppercase border-b border-pink-100 border-r border-pink-200">NN</th>
+                <th className="p-2 text-[9px] font-bold text-cyan-700 bg-[#E0F7FA] uppercase border-b border-cyan-100 border-r border-cyan-100">CĐT</th>
+                <th className="p-2 text-[9px] font-bold text-cyan-700 bg-[#E0F7FA] uppercase border-b border-cyan-100 border-r border-cyan-200">NN</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={16} className="p-12 text-center text-slate-400 font-medium italic">Đang tải dữ liệu...</td>
+                  <td colSpan={20} className="p-12 text-center text-slate-400 font-medium italic">Đang tải dữ liệu...</td>
                 </tr>
               ) : currentProjects.length === 0 ? (
                 <tr>
-                  <td colSpan={16} className="p-12 text-center text-slate-400 font-medium italic">Không tìm thấy dự án nào</td>
+                  <td colSpan={20} className="p-12 text-center text-slate-400 font-medium italic">Không tìm thấy dự án nào</td>
                 </tr>
               ) : (
-                currentProjects.map((project) => (
+                currentProjects.map((project, idx) => (
                   <tr key={project.id} className="hover:bg-slate-50/50 transition-colors group">
-                    <td className="p-4 border-b border-slate-100 sticky left-0 bg-white group-hover:bg-slate-50/80 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
+                    <td className="p-4 border-b border-slate-100 border-r border-slate-100 text-center text-sm font-bold text-slate-600 sticky left-0 bg-white group-hover:bg-slate-50/80 z-10 w-12">
+                      {(currentPage - 1) * itemsPerPage + idx + 1}
+                    </td>
+                    <td className="p-4 border-b border-slate-100 border-r border-slate-100 sticky left-12 bg-white group-hover:bg-slate-50/80 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] w-[250px]">
                       <div className="min-w-[200px]">
-                        <p className="text-base font-black text-slate-900 line-clamp-1">{project.name}</p>
-                        <p className="text-sm text-slate-400 font-medium uppercase tracking-wider">{project.code}</p>
+                        <p className="text-sm font-black text-slate-900 line-clamp-1">{project.name}</p>
+                        <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">{project.code}</p>
                       </div>
                     </td>
-                    <td className="p-2 text-center border-b border-slate-100 border-l border-slate-100 text-sm font-medium text-slate-600">{project.chutruong_cdt_date || '-'}</td>
-                    <td className="p-2 text-center border-b border-slate-100 border-l border-slate-50 text-sm font-medium text-slate-600">{project.chutruong_nn_date || '-'}</td>
-                    <td className="p-2 text-center border-b border-slate-100 border-l border-slate-100 text-sm font-medium text-slate-600">{project.qh1500_cdt_date || '-'}</td>
-                    <td className="p-2 text-center border-b border-slate-100 border-l border-slate-50 text-sm font-medium text-slate-600">{project.qh1500_nn_date || '-'}</td>
-                    <td className="p-2 text-center border-b border-slate-100 border-l border-slate-100 text-sm font-medium text-slate-600">{project.qdgiaodat_cdt_date || '-'}</td>
-                    <td className="p-2 text-center border-b border-slate-100 border-l border-slate-50 text-sm font-medium text-slate-600">{project.qdgiaodat_nn_date || '-'}</td>
-                    <td className="p-2 text-center border-b border-slate-100 border-l border-slate-100 text-sm font-medium text-slate-600">{project.pccc_cdt_date || '-'}</td>
-                    <td className="p-2 text-center border-b border-slate-100 border-l border-slate-50 text-sm font-medium text-slate-600">{project.pccc_nn_date || '-'}</td>
-                    <td className="p-2 text-center border-b border-slate-100 border-l border-slate-100 text-sm font-medium text-slate-600">{project.htkt_dtm_cdt_date || '-'}</td>
-                    <td className="p-2 text-center border-b border-slate-100 border-l border-slate-50 text-sm font-medium text-slate-600">{project.htkt_dtm_nn_date || '-'}</td>
-                    <td className="p-2 text-center border-b border-slate-100 border-l border-slate-100 text-sm font-medium text-slate-600">{project.gpxaydung_cdt_date || '-'}</td>
-                    <td className="p-2 text-center border-b border-slate-100 border-l border-slate-50 text-sm font-medium text-slate-600">{project.gpxaydung_nn_date || '-'}</td>
-                    <td className="p-2 text-center border-b border-slate-100 border-l border-slate-100 text-sm font-medium text-slate-600">{project.completion_date || '-'}</td>
-                    <td className="p-2 text-center border-b border-slate-100 border-l border-slate-100">
-                      <span className="text-sm font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{project.progress_status_2026 || 'Chưa cập nhật'}</span>
+                    <td className="p-2 text-center border-b border-slate-100 border-r border-slate-100 text-sm font-medium text-slate-600 bg-blue-50/5">{renderDateCell(project.chutruong_cdt_date)}</td>
+                    <td className="p-2 text-center border-b border-slate-100 border-r border-slate-100 text-sm font-medium text-slate-600 bg-blue-50/10">{renderDateCell(project.chutruong_nn_date)}</td>
+                    <td className="p-2 text-center border-b border-slate-100 border-r border-slate-100 text-sm font-medium text-slate-600 bg-purple-50/5">{renderDateCell(project.qh1500_cdt_date)}</td>
+                    <td className="p-2 text-center border-b border-slate-100 border-r border-slate-100 text-sm font-medium text-slate-600 bg-purple-50/10">{renderDateCell(project.qh1500_nn_date)}</td>
+                    <td className="p-2 text-center border-b border-slate-100 border-r border-slate-100 text-sm font-medium text-slate-600 bg-emerald-50/5">{renderDateCell(project.qdgiaodat_cdt_date)}</td>
+                    <td className="p-2 text-center border-b border-slate-100 border-r border-slate-100 text-sm font-medium text-slate-600 bg-emerald-50/10">{renderDateCell(project.qdgiaodat_nn_date)}</td>
+                    <td className="p-2 text-center border-b border-slate-100 border-r border-slate-100 text-sm font-medium text-slate-600 bg-amber-50/5">{renderDateCell(project.htkt_dtm_cdt_date)}</td>
+                    <td className="p-2 text-center border-b border-slate-100 border-r border-slate-100 text-sm font-medium text-slate-600 bg-amber-50/10">{renderDateCell(project.htkt_dtm_nn_date)}</td>
+                    <td className="p-2 text-center border-b border-slate-100 border-r border-slate-100 text-sm font-medium text-slate-600 bg-rose-50/5">{renderDateCell(project.baocaonckt_cdt_date)}</td>
+                    <td className="p-2 text-center border-b border-slate-100 border-r border-slate-100 text-sm font-medium text-slate-600 bg-rose-50/10">{renderDateCell(project.baocaonckt_nn_date)}</td>
+                    <td className="p-2 text-center border-b border-slate-100 border-r border-slate-100 text-sm font-medium text-slate-600 bg-pink-50/5">{renderDateCell(project.pccc_cdt_date)}</td>
+                    <td className="p-2 text-center border-b border-slate-100 border-r border-slate-100 text-sm font-medium text-slate-600 bg-pink-50/10">{renderDateCell(project.pccc_nn_date)}</td>
+                    <td className="p-2 text-center border-b border-slate-100 border-r border-slate-100 text-sm font-medium text-slate-600 bg-cyan-50/5">{renderDateCell(project.gpxaydung_cdt_date)}</td>
+                    <td className="p-2 text-center border-b border-slate-100 border-r border-slate-100 text-sm font-medium text-slate-600 bg-cyan-50/10">{renderDateCell(project.gpxaydung_nn_date)}</td>
+                    <td className="p-2 text-center border-b border-slate-100 border-r border-slate-100 text-sm font-medium text-slate-600">{renderDateCell(project.completion_date)}</td>
+                    <td className="p-2 text-center border-b border-slate-100 border-r border-slate-100">
+                      <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full line-clamp-1">{project.progress_status_2026 || 'Chưa cập nhật'}</span>
                     </td>
-                    <td className="p-2 text-center border-b border-slate-100 border-l border-slate-100">
+                    <td className="p-2 text-center border-b border-slate-100">
                       <div className="flex items-center justify-center gap-2">
                         <button 
                           onClick={() => setEditingProject({...project})}
@@ -362,7 +415,7 @@ export default function AnnualProgressUpdate({ projects: initialProjects = [], r
                           title="Cập nhật tiến độ"
                         >
                           <Clock size={16} />
-                          <span className="text-sm font-bold hidden lg:inline">Cập nhật</span>
+                          <span className="text-sm font-bold hidden xl:inline">Cập nhật</span>
                         </button>
                       </div>
                     </td>
@@ -372,6 +425,7 @@ export default function AnnualProgressUpdate({ projects: initialProjects = [], r
             </tbody>
           </table>
         </div>
+
 
         <div className="p-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -565,10 +619,35 @@ export default function AnnualProgressUpdate({ projects: initialProjects = [], r
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {/* Chủ trương đầu tư */}
                   <div className="space-y-4 p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                    <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                      <div className="w-1.5 h-4 bg-blue-500 rounded-full" />
-                      Chủ trương đầu tư
-                    </h4>
+                    <div className="flex items-center justify-between w-full">
+                      <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <div className="w-1.5 h-4 bg-blue-500 rounded-full" />
+                        Chủ trương đầu tư
+                      </h4>
+                      <label className="flex items-center gap-2 cursor-pointer group/done">
+                        <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${
+                          editingProject.chutruong_cdt_date === 'X' && editingProject.chutruong_nn_date === 'X'
+                            ? 'bg-emerald-500 border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]' 
+                            : 'border-slate-200 bg-white group-hover/done:border-emerald-300'
+                        }`}>
+                          {(editingProject.chutruong_cdt_date === 'X' && editingProject.chutruong_nn_date === 'X') && <Check size={12} strokeWidth={4} className="text-white" />}
+                          <input 
+                            type="checkbox" 
+                            className="hidden" 
+                            checked={editingProject.chutruong_cdt_date === 'X' && editingProject.chutruong_nn_date === 'X'}
+                            onChange={(e) => {
+                              const val = e.target.checked ? 'X' : '';
+                              setEditingProject({...editingProject, chutruong_cdt_date: val, chutruong_nn_date: val});
+                            }}
+                          />
+                        </div>
+                        <span className={`text-[11px] font-black uppercase tracking-widest transition-colors ${
+                          editingProject.chutruong_cdt_date === 'X' && editingProject.chutruong_nn_date === 'X'
+                            ? 'text-emerald-600' 
+                            : 'text-slate-400 group-hover/done:text-slate-500'
+                        }`}>Đã xong</span>
+                      </label>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <label className="text-xs font-black text-slate-500 uppercase tracking-wider ml-1">CĐT (Ngày)</label>
@@ -595,10 +674,35 @@ export default function AnnualProgressUpdate({ projects: initialProjects = [], r
 
                   {/* QH 1/500 */}
                   <div className="space-y-4 p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                    <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                      <div className="w-1.5 h-4 bg-emerald-500 rounded-full" />
-                      Quy hoạch 1/500
-                    </h4>
+                    <div className="flex items-center justify-between w-full">
+                      <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <div className="w-1.5 h-4 bg-emerald-500 rounded-full" />
+                        Quy hoạch 1/500
+                      </h4>
+                      <label className="flex items-center gap-2 cursor-pointer group/done">
+                        <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${
+                          editingProject.qh1500_cdt_date === 'X' && editingProject.qh1500_nn_date === 'X'
+                            ? 'bg-emerald-500 border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]' 
+                            : 'border-slate-200 bg-white group-hover/done:border-emerald-300'
+                        }`}>
+                          {(editingProject.qh1500_cdt_date === 'X' && editingProject.qh1500_nn_date === 'X') && <Check size={12} strokeWidth={4} className="text-white" />}
+                          <input 
+                            type="checkbox" 
+                            className="hidden" 
+                            checked={editingProject.qh1500_cdt_date === 'X' && editingProject.qh1500_nn_date === 'X'}
+                            onChange={(e) => {
+                              const val = e.target.checked ? 'X' : '';
+                              setEditingProject({...editingProject, qh1500_cdt_date: val, qh1500_nn_date: val});
+                            }}
+                          />
+                        </div>
+                        <span className={`text-[11px] font-black uppercase tracking-widest transition-colors ${
+                          editingProject.qh1500_cdt_date === 'X' && editingProject.qh1500_nn_date === 'X'
+                            ? 'text-emerald-600' 
+                            : 'text-slate-400 group-hover/done:text-slate-500'
+                        }`}>Đã xong</span>
+                      </label>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <label className="text-xs font-black text-slate-500 uppercase tracking-wider ml-1">CĐT (Ngày)</label>
@@ -625,10 +729,35 @@ export default function AnnualProgressUpdate({ projects: initialProjects = [], r
 
                   {/* QĐ Giao đất */}
                   <div className="space-y-4 p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                    <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                      <div className="w-1.5 h-4 bg-amber-500 rounded-full" />
-                      QĐ Giao đất / Cho thuê đất
-                    </h4>
+                    <div className="flex items-center justify-between w-full">
+                      <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <div className="w-1.5 h-4 bg-amber-500 rounded-full" />
+                        QĐ Giao đất / Cho thuê đất
+                      </h4>
+                      <label className="flex items-center gap-2 cursor-pointer group/done">
+                        <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${
+                          editingProject.qdgiaodat_cdt_date === 'X' && editingProject.qdgiaodat_nn_date === 'X'
+                            ? 'bg-emerald-500 border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]' 
+                            : 'border-slate-200 bg-white group-hover/done:border-emerald-300'
+                        }`}>
+                          {(editingProject.qdgiaodat_cdt_date === 'X' && editingProject.qdgiaodat_nn_date === 'X') && <Check size={12} strokeWidth={4} className="text-white" />}
+                          <input 
+                            type="checkbox" 
+                            className="hidden" 
+                            checked={editingProject.qdgiaodat_cdt_date === 'X' && editingProject.qdgiaodat_nn_date === 'X'}
+                            onChange={(e) => {
+                              const val = e.target.checked ? 'X' : '';
+                              setEditingProject({...editingProject, qdgiaodat_cdt_date: val, qdgiaodat_nn_date: val});
+                            }}
+                          />
+                        </div>
+                        <span className={`text-[11px] font-black uppercase tracking-widest transition-colors ${
+                          editingProject.qdgiaodat_cdt_date === 'X' && editingProject.qdgiaodat_nn_date === 'X'
+                            ? 'text-emerald-600' 
+                            : 'text-slate-400 group-hover/done:text-slate-500'
+                        }`}>Đã xong</span>
+                      </label>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <label className="text-xs font-black text-slate-500 uppercase tracking-wider ml-1">CĐT (Ngày)</label>
@@ -653,42 +782,37 @@ export default function AnnualProgressUpdate({ projects: initialProjects = [], r
                     </div>
                   </div>
 
-                  {/* PCCC */}
-                  <div className="space-y-4 p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                    <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                      <div className="w-1.5 h-4 bg-rose-500 rounded-full" />
-                      Thẩm duyệt PCCC
-                    </h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-black text-slate-500 uppercase tracking-wider ml-1">CĐT (Ngày)</label>
-                        <DatePicker
-                          selected={parseDate(editingProject.pccc_cdt_date)}
-                          onChange={(date: Date | null) => setEditingProject({...editingProject, pccc_cdt_date: formatDate(date)})}
-                          dateFormat="dd/MM/yyyy"
-                          placeholderText="dd/mm/yyyy"
-                          className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-base outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-black text-slate-500 uppercase tracking-wider ml-1">Cơ quan NN (Ngày)</label>
-                        <DatePicker
-                          selected={parseDate(editingProject.pccc_nn_date)}
-                          onChange={(date: Date | null) => setEditingProject({...editingProject, pccc_nn_date: formatDate(date)})}
-                          dateFormat="dd/MM/yyyy"
-                          placeholderText="dd/mm/yyyy"
-                          className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-base outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
                   {/* HTKT/ĐTM */}
                   <div className="space-y-4 p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                    <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                      <div className="w-1.5 h-4 bg-purple-500 rounded-full" />
-                      Đấu nối HTKT / ĐTM
-                    </h4>
+                    <div className="flex items-center justify-between w-full">
+                      <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <div className="w-1.5 h-4 bg-purple-500 rounded-full" />
+                        Đấu nối HTKT / ĐTM
+                      </h4>
+                      <label className="flex items-center gap-2 cursor-pointer group/done">
+                        <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${
+                          editingProject.htkt_dtm_cdt_date === 'X' && editingProject.htkt_dtm_nn_date === 'X'
+                            ? 'bg-emerald-500 border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]' 
+                            : 'border-slate-200 bg-white group-hover/done:border-emerald-300'
+                        }`}>
+                          {(editingProject.htkt_dtm_cdt_date === 'X' && editingProject.htkt_dtm_nn_date === 'X') && <Check size={12} strokeWidth={4} className="text-white" />}
+                          <input 
+                            type="checkbox" 
+                            className="hidden" 
+                            checked={editingProject.htkt_dtm_cdt_date === 'X' && editingProject.htkt_dtm_nn_date === 'X'}
+                            onChange={(e) => {
+                              const val = e.target.checked ? 'X' : '';
+                              setEditingProject({...editingProject, htkt_dtm_cdt_date: val, htkt_dtm_nn_date: val});
+                            }}
+                          />
+                        </div>
+                        <span className={`text-[11px] font-black uppercase tracking-widest transition-colors ${
+                          editingProject.htkt_dtm_cdt_date === 'X' && editingProject.htkt_dtm_nn_date === 'X'
+                            ? 'text-emerald-600' 
+                            : 'text-slate-400 group-hover/done:text-slate-500'
+                        }`}>Đã xong</span>
+                      </label>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <label className="text-xs font-black text-slate-500 uppercase tracking-wider ml-1">CĐT (Ngày)</label>
@@ -713,12 +837,147 @@ export default function AnnualProgressUpdate({ projects: initialProjects = [], r
                     </div>
                   </div>
 
+                  {/* BC NCKT */}
+                  <div className="space-y-4 p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                    <div className="flex items-center justify-between w-full">
+                      <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <div className="w-1.5 h-4 bg-teal-500 rounded-full" />
+                        BC nghiên cứu khả thi
+                      </h4>
+                      <label className="flex items-center gap-2 cursor-pointer group/done">
+                        <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${
+                          editingProject.baocaonckt_cdt_date === 'X' && editingProject.baocaonckt_nn_date === 'X'
+                            ? 'bg-emerald-500 border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]' 
+                            : 'border-slate-200 bg-white group-hover/done:border-emerald-300'
+                        }`}>
+                          {(editingProject.baocaonckt_cdt_date === 'X' && editingProject.baocaonckt_nn_date === 'X') && <Check size={12} strokeWidth={4} className="text-white" />}
+                          <input 
+                            type="checkbox" 
+                            className="hidden" 
+                            checked={editingProject.baocaonckt_cdt_date === 'X' && editingProject.baocaonckt_nn_date === 'X'}
+                            onChange={(e) => {
+                              const val = e.target.checked ? 'X' : '';
+                              setEditingProject({...editingProject, baocaonckt_cdt_date: val, baocaonckt_nn_date: val});
+                            }}
+                          />
+                        </div>
+                        <span className={`text-[11px] font-black uppercase tracking-widest transition-colors ${
+                          editingProject.baocaonckt_cdt_date === 'X' && editingProject.baocaonckt_nn_date === 'X'
+                            ? 'text-emerald-600' 
+                            : 'text-slate-400 group-hover/done:text-slate-500'
+                        }`}>Đã xong</span>
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-black text-slate-500 uppercase tracking-wider ml-1">CĐT (Ngày)</label>
+                        <DatePicker
+                          selected={parseDate(editingProject.baocaonckt_cdt_date)}
+                          onChange={(date: Date | null) => setEditingProject({...editingProject, baocaonckt_cdt_date: formatDate(date)})}
+                          dateFormat="dd/MM/yyyy"
+                          placeholderText="dd/mm/yyyy"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-base outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-black text-slate-500 uppercase tracking-wider ml-1">Cơ quan NN (Ngày)</label>
+                        <DatePicker
+                          selected={parseDate(editingProject.baocaonckt_nn_date)}
+                          onChange={(date: Date | null) => setEditingProject({...editingProject, baocaonckt_nn_date: formatDate(date)})}
+                          dateFormat="dd/MM/yyyy"
+                          placeholderText="dd/mm/yyyy"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-base outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* PCCC */}
+                  <div className="space-y-4 p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                    <div className="flex items-center justify-between w-full">
+                      <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <div className="w-1.5 h-4 bg-rose-500 rounded-full" />
+                        Thẩm duyệt PCCC
+                      </h4>
+                      <label className="flex items-center gap-2 cursor-pointer group/done">
+                        <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${
+                          editingProject.pccc_cdt_date === 'X' && editingProject.pccc_nn_date === 'X'
+                            ? 'bg-emerald-500 border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]' 
+                            : 'border-slate-200 bg-white group-hover/done:border-emerald-300'
+                        }`}>
+                          {(editingProject.pccc_cdt_date === 'X' && editingProject.pccc_nn_date === 'X') && <Check size={12} strokeWidth={4} className="text-white" />}
+                          <input 
+                            type="checkbox" 
+                            className="hidden" 
+                            checked={editingProject.pccc_cdt_date === 'X' && editingProject.pccc_nn_date === 'X'}
+                            onChange={(e) => {
+                              const val = e.target.checked ? 'X' : '';
+                              setEditingProject({...editingProject, pccc_cdt_date: val, pccc_nn_date: val});
+                            }}
+                          />
+                        </div>
+                        <span className={`text-[11px] font-black uppercase tracking-widest transition-colors ${
+                          editingProject.pccc_cdt_date === 'X' && editingProject.pccc_nn_date === 'X'
+                            ? 'text-emerald-600' 
+                            : 'text-slate-400 group-hover/done:text-slate-500'
+                        }`}>Đã xong</span>
+                      </label>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-black text-slate-500 uppercase tracking-wider ml-1">CĐT (Ngày)</label>
+                        <DatePicker
+                          selected={parseDate(editingProject.pccc_cdt_date)}
+                          onChange={(date: Date | null) => setEditingProject({...editingProject, pccc_cdt_date: formatDate(date)})}
+                          dateFormat="dd/MM/yyyy"
+                          placeholderText="dd/mm/yyyy"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-base outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-black text-slate-500 uppercase tracking-wider ml-1">Cơ quan NN (Ngày)</label>
+                        <DatePicker
+                          selected={parseDate(editingProject.pccc_nn_date)}
+                          onChange={(date: Date | null) => setEditingProject({...editingProject, pccc_nn_date: formatDate(date)})}
+                          dateFormat="dd/MM/yyyy"
+                          placeholderText="dd/mm/yyyy"
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-base outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
                   {/* GP Xây dựng */}
                   <div className="space-y-4 p-6 bg-slate-50 rounded-3xl border border-slate-100">
-                    <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                      <div className="w-1.5 h-4 bg-indigo-500 rounded-full" />
-                      Giấy phép xây dựng
-                    </h4>
+                    <div className="flex items-center justify-between w-full">
+                      <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <div className="w-1.5 h-4 bg-indigo-500 rounded-full" />
+                        Giấy phép xây dựng
+                      </h4>
+                      <label className="flex items-center gap-2 cursor-pointer group/done">
+                        <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${
+                          editingProject.gpxaydung_cdt_date === 'X' && editingProject.gpxaydung_nn_date === 'X'
+                            ? 'bg-emerald-500 border-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]' 
+                            : 'border-slate-200 bg-white group-hover/done:border-emerald-300'
+                        }`}>
+                          {(editingProject.gpxaydung_cdt_date === 'X' && editingProject.gpxaydung_nn_date === 'X') && <Check size={12} strokeWidth={4} className="text-white" />}
+                          <input 
+                            type="checkbox" 
+                            className="hidden" 
+                            checked={editingProject.gpxaydung_cdt_date === 'X' && editingProject.gpxaydung_nn_date === 'X'}
+                            onChange={(e) => {
+                              const val = e.target.checked ? 'X' : '';
+                              setEditingProject({...editingProject, gpxaydung_cdt_date: val, gpxaydung_nn_date: val});
+                            }}
+                          />
+                        </div>
+                        <span className={`text-[11px] font-black uppercase tracking-widest transition-colors ${
+                          editingProject.gpxaydung_cdt_date === 'X' && editingProject.gpxaydung_nn_date === 'X'
+                            ? 'text-emerald-600' 
+                            : 'text-slate-400 group-hover/done:text-slate-500'
+                        }`}>Đã xong</span>
+                      </label>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <label className="text-xs font-black text-slate-500 uppercase tracking-wider ml-1">CĐT (Ngày)</label>

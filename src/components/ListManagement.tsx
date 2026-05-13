@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { Trash2, Plus, Edit2, Save, X } from 'lucide-react';
+import { Trash2, Plus, Edit2, Save, X, UserPlus } from 'lucide-react';
 
 interface ListManagementProps {
   items: string[];
   setItems: (items: string[]) => void;
   title: string;
+  onAddUser?: (investor: string) => void;
 }
 
-export default function ListManagement({ items, setItems, title }: ListManagementProps) {
+export default function ListManagement({ items, setItems, title, onAddUser }: ListManagementProps) {
   const [newItem, setNewItem] = useState('');
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editValue, setEditValue] = useState('');
@@ -70,6 +71,11 @@ export default function ListManagement({ items, setItems, title }: ListManagemen
               <span className="font-medium text-slate-700">{item}</span>
             )}
             <div className="flex items-center gap-2">
+              {onAddUser && title === 'Chủ đầu tư' && (
+                <button onClick={() => onAddUser(item)} className="text-blue-600 hover:text-blue-700 p-2" title="Tạo tài khoản">
+                  <UserPlus size={18} />
+                </button>
+              )}
               {editingIndex === i ? (
                 <>
                   <button onClick={() => saveEdit(i)} className="text-emerald-600 hover:text-emerald-700 p-2">

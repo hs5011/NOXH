@@ -31,6 +31,8 @@ interface Agency {
   displayOrder: number;
 }
 
+import { UserAccount } from '../types';
+
 interface AgencyProjectStatsProps {
   projects?: Project[];
   processingAgencies: Agency[];
@@ -39,6 +41,7 @@ interface AgencyProjectStatsProps {
   investors?: string[];
   projectSteps?: string[];
   onProjectClick?: (project: any) => void;
+  currentUser?: UserAccount | null;
 }
 
 export default function AgencyProjectStats({ 
@@ -48,7 +51,8 @@ export default function AgencyProjectStats({
   locations = [],
   investors: initialInvestors = [],
   projectSteps = [],
-  onProjectClick
+  onProjectClick,
+  currentUser
 }: AgencyProjectStatsProps) {
   const [projects, setProjects] = useState<Project[]>(initialProjects);
   const [loading, setLoading] = useState(false);
@@ -101,6 +105,8 @@ export default function AgencyProjectStats({
     setIsSaving(false);
   };
 
+  const showInvestorStat = !currentUser || currentUser.roleId === 'Admin' || (currentUser.userType === 'agency' && currentUser.agencyId === '1') || currentUser.userType === 'investor';
+
   const dynamicAgencies = [
     ...[...processingAgencies].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)).map(a => {
       const agencyProjects = globalFilteredProjects.filter(p => p.currentAgency === a.name);
@@ -115,30 +121,32 @@ export default function AgencyProjectStats({
         iconColor: 'text-blue-500'
       };
     }),
-    {
-      id: 'investor-stat',
-      name: 'Chủ đầu tư',
-      count: globalFilteredProjects.filter(p => p.currentAgency === 'Chủ đầu tư').length,
-      delayedCount: globalFilteredProjects.filter(p => p.currentAgency === 'Chủ đầu tư' && (p.status === 'Delayed' || p.status === 'Warning')).length,
-      subtext: 'dự án đang xử lý',
-      color: 'bg-emerald-50',
-      iconColor: 'text-emerald-500',
-      departments: []
-    },
-    {
-      id: 'no-investor-stat',
-      name: 'Chưa có chủ đầu tư',
-      count: globalFilteredProjects.filter(p => p.investor === 'Chưa có chủ đầu tư').length,
-      delayedCount: globalFilteredProjects.filter(p => p.investor === 'Chưa có chủ đầu tư' && (p.status === 'Delayed' || p.status === 'Warning')).length,
-      subtext: 'dự án đang xử lý',
-      color: 'bg-amber-50',
-      iconColor: 'text-amber-500',
-      departments: []
-    }
+    ...(showInvestorStat ? [
+      {
+        id: 'investor-stat',
+        name: 'Chủ đầu tư',
+        count: globalFilteredProjects.filter(p => p.currentAgency === 'Chủ đầu tư').length,
+        delayedCount: globalFilteredProjects.filter(p => p.currentAgency === 'Chủ đầu tư' && (p.status === 'Delayed' || p.status === 'Warning')).length,
+        subtext: 'dự án đang xử lý',
+        color: 'bg-emerald-50',
+        iconColor: 'text-emerald-500',
+        departments: []
+      },
+      ...(currentUser?.userType !== 'investor' ? [{
+        id: 'no-investor-stat',
+        name: 'Chưa có chủ đầu tư',
+        count: globalFilteredProjects.filter(p => p.investor === 'Chưa có chủ đầu tư').length,
+        delayedCount: globalFilteredProjects.filter(p => p.investor === 'Chưa có chủ đầu tư' && (p.status === 'Delayed' || p.status === 'Warning')).length,
+        subtext: 'dự án đang xử lý',
+        color: 'bg-amber-50',
+        iconColor: 'text-amber-500',
+        departments: []
+      }] : [])
+    ] : [])
   ];
 
   const getDepartmentStats = (agencyName: string, deptName: string) => {
-    const deptProjects = globalFilteredProjects.filter(p => p.currentAgency === agencyName && p.currentDepartment === deptName);
+    const deptProjects = globalFilteredProjects.filter(p => p.currentAgency === agencyName && (p.currentDepartment === deptName || p.location.includes(deptName)));
     const delayed = deptProjects.filter(p => p.status === 'Delayed' || p.status === 'Warning').length;
     const ontime = deptProjects.length - delayed;
     let count = deptProjects.length;
@@ -285,8 +293,9 @@ export default function AgencyProjectStats({
       if (selectedProcess) return p.processId === selectedProcess;
       if (selectedInvestor) return p.investor === selectedInvestor;
       if (selectedDepartment) {
-        return p.currentAgency === selectedAgency?.name && p.currentDepartment === selectedDepartment;
+        return p.currentAgency === selectedAgency?.name && (p.currentDepartment === selectedDepartment || p.location.includes(selectedDepartment));
       }
+      if (selectedAgency?.id === 'investor-stat') return p.currentAgency === 'Chủ đầu tư';
       if (selectedAgency) return p.currentAgency === selectedAgency?.name;
       return true; // If no specific filter is selected, show all (e.g., when clicking summary cards)
     }
@@ -488,7 +497,8 @@ export default function AgencyProjectStats({
                           whileTap={{ scale: 0.98 }}
                           onClick={() => {
                             if (agency.id === 'investor-stat') {
-                              setView('investors');
+                              setSelectedAgency(agency as any);
+                              setView('projects');
                             } else if (agency.id === 'no-investor-stat') {
                               setSelectedInvestor('Chưa có chủ đầu tư');
                               setView('projects');
@@ -514,7 +524,8 @@ export default function AgencyProjectStats({
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   if (agency.id === 'investor-stat') {
-                                    setView('investors');
+                                    setSelectedAgency(agency as any);
+                                    setView('projects');
                                     setStatusFilter('delayed');
                                   } else if (agency.id === 'no-investor-stat') {
                                     setSelectedInvestor('Chưa có chủ đầu tư');
@@ -540,7 +551,8 @@ export default function AgencyProjectStats({
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   if (agency.id === 'investor-stat') {
-                                    setView('investors');
+                                    setSelectedAgency(agency as any);
+                                    setView('projects');
                                     setStatusFilter('ontime');
                                   } else if (agency.id === 'no-investor-stat') {
                                     setSelectedInvestor('Chưa có chủ đầu tư');

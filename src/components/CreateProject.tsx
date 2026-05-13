@@ -9,7 +9,7 @@ registerLocale('vi', vi);
 
 import { Agency } from './AgencyManagement';
 import { Process } from './StepManagementView';
-import { calculateProjectStatus } from '../lib/projectUtils';
+import { calculateProjectStatus, parseDate } from '../lib/projectUtils';
 
 interface Location {
   ward: string;
@@ -29,6 +29,8 @@ interface CreateProjectProps {
   processingAgencies: Agency[];
   processes: Process[];
   followers: string[];
+  buildingGrades: string[];
+  projectCategories: string[];
 }
 
 interface LegalFile {
@@ -58,7 +60,9 @@ export default function CreateProject({
   projectSteps,
   processingAgencies,
   processes,
-  followers
+  followers,
+  buildingGrades,
+  projectCategories
 }: CreateProjectProps) {
   const isEdit = !!project;
   
@@ -76,6 +80,8 @@ export default function CreateProject({
     startDate: project?.startDate || '',
     endDate: project?.endDate || '',
     projectGroup: project?.projectGroup || '',
+    buildingGrade: project?.buildingGrade || '',
+    projectCategory: project?.projectCategory || '',
     fundingSource: project?.fundingSource || '',
     processId: project?.processId || '',
     follower: project?.follower || '',
@@ -247,12 +253,13 @@ export default function CreateProject({
                       
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mã dự án (Tự động)</label>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mã dự án <span className="text-rose-500">*</span></label>
                           <input 
+                            required
                             type="text" 
                             value={formData.code} 
-                            disabled 
-                            className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-mono text-slate-500"
+                            onChange={e => setFormData({...formData, code: e.target.value})}
+                            className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-mono outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
                           />
                         </div>
                         <div className="md:col-span-2 space-y-2">
@@ -339,6 +346,17 @@ export default function CreateProject({
                           </select>
                         </div>
                         <div className="space-y-2">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cấp công trình</label>
+                          <select 
+                            value={formData.buildingGrade}
+                            onChange={e => setFormData({...formData, buildingGrade: e.target.value})}
+                            className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                          >
+                            <option value="">Chọn cấp công trình...</option>
+                            {buildingGrades.map(bg => <option key={bg} value={bg}>{bg}</option>)}
+                          </select>
+                        </div>
+                        <div className="space-y-2">
                           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Nguồn vốn</label>
                           <select 
                             value={formData.fundingSource}
@@ -349,7 +367,7 @@ export default function CreateProject({
                             {fundingSources.map(fs => <option key={fs} value={fs}>{fs}</option>)}
                           </select>
                         </div>
-                        <div className="md:col-span-2 space-y-2">
+                        <div className="space-y-2">
                           <div className="flex justify-between items-center">
                             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Địa điểm <span className="text-rose-500">*</span></label>
                           </div>
@@ -361,6 +379,17 @@ export default function CreateProject({
                           >
                             <option value="">Chọn địa điểm...</option>
                             {locations.map(loc => <option key={loc.ward} value={loc.ward}>{loc.ward}</option>)}
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Phân loại dự án</label>
+                          <select 
+                            value={formData.projectCategory}
+                            onChange={e => setFormData({...formData, projectCategory: e.target.value})}
+                            className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all"
+                          >
+                            <option value="">Chọn phân loại...</option>
+                            {projectCategories.map(pc => <option key={pc} value={pc}>{pc}</option>)}
                           </select>
                         </div>
                       </div>
@@ -424,7 +453,7 @@ export default function CreateProject({
                         <div className="space-y-2">
                           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ngày bắt đầu (Từ)</label>
                           <DatePicker 
-                            selected={formData.startDate ? new Date(formData.startDate) : null}
+                            selected={parseDate(formData.startDate)}
                             onChange={(date) => setFormData({...formData, startDate: date ? date.toISOString().split('T')[0] : ''})}
                             dateFormat={["dd/MM/yyyy", "yyyy"]}
                             placeholderText="dd/mm/yyyy hoặc yyyy"
@@ -435,7 +464,7 @@ export default function CreateProject({
                         <div className="space-y-2">
                           <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ngày hoàn thành (Đến)</label>
                           <DatePicker 
-                            selected={formData.endDate ? new Date(formData.endDate) : null}
+                            selected={parseDate(formData.endDate)}
                             onChange={(date) => setFormData({...formData, endDate: date ? date.toISOString().split('T')[0] : ''})}
                             dateFormat={["dd/MM/yyyy", "yyyy"]}
                             placeholderText="dd/mm/yyyy hoặc yyyy"

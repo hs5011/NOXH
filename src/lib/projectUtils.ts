@@ -1,9 +1,40 @@
 import { Process } from '../components/StepManagementView';
 
-export const formatDate = (dateString: string | undefined | null): string => {
-  if (!dateString) return '';
+export const parseDate = (dateString: string | undefined | null): Date | null => {
+  if (!dateString || dateString === 'X' || dateString === '--') return null;
+  
+  // Handle dd/mm/yyyy or dd/mm/yy
+  if (dateString.includes('/')) {
+    const parts = dateString.split('/').map(Number);
+    if (parts.length >= 2) {
+      const day = parts[0];
+      const month = parts[1];
+      let year = parts[2] || new Date().getFullYear();
+      
+      if (isNaN(day) || isNaN(month) || isNaN(year)) return null;
+
+      if (year < 100) year += 2000;
+      const date = new Date(year, month - 1, day);
+      return isNaN(date.getTime()) ? null : date;
+    }
+  }
+  
+  // Handle yyyy-mm-dd
   const date = new Date(dateString);
-  if (isNaN(date.getTime())) return dateString;
+  return isNaN(date.getTime()) ? null : date;
+};
+
+export const formatDate = (dateString: string | undefined | null): string => {
+  if (!dateString || dateString === 'X' || dateString === '--') return '';
+  
+  // If already in dd/mm/yyyy format, return as is
+  if (dateString.includes('/') && dateString.split('/').length === 3) {
+    return dateString;
+  }
+
+  const date = parseDate(dateString);
+  if (!date || isNaN(date.getTime())) return dateString || '';
+  
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = date.getFullYear();
@@ -67,8 +98,8 @@ export const calculateProjectStatus = (milestones: any, processId: string, proce
     const m = milestones[s.id] || {};
     const deadline = m.agency || m.investor;
     if (deadline) {
-      const deadlineDate = new Date(deadline);
-      if (new Date() > deadlineDate) {
+      const deadlineDate = parseDate(deadline);
+      if (deadlineDate && new Date() > deadlineDate) {
         status = 'Delayed';
       }
     }

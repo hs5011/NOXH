@@ -10,6 +10,7 @@ import { Agency } from './AgencyManagement';
 export interface ChildStep {
   id: string;
   name: string;
+  shortName?: string;
   agency: string;
   department?: string;
   slaDays: number;
@@ -18,6 +19,7 @@ export interface ChildStep {
 export interface ParentStep {
   id: string;
   name: string;
+  shortName?: string;
   slaDays: number;
   stage?: string;
   childSteps: ChildStep[];
@@ -47,8 +49,8 @@ export default function StepManagementView({ processingAgencies, processes, setP
   const [editingChild, setEditingChild] = useState<{ processId: string, parentId: string, child: ChildStep | null } | null>(null);
 
   const [processFormData, setProcessFormData] = useState({ name: '' });
-  const [parentFormData, setParentFormData] = useState({ name: '', slaDays: '', stage: '' });
-  const [childFormData, setChildFormData] = useState({ name: '', agency: '', department: '', slaDays: '' });
+  const [parentFormData, setParentFormData] = useState({ name: '', shortName: '', slaDays: '', stage: '' });
+  const [childFormData, setChildFormData] = useState({ name: '', shortName: '', agency: '', department: '', slaDays: '' });
 
   const [expandedParentIds, setExpandedParentIds] = useState<string[]>([]);
 
@@ -98,10 +100,15 @@ export default function StepManagementView({ processingAgencies, processes, setP
   const handleOpenParentModal = (processId: string, parent: ParentStep | null = null) => {
     if (parent) {
       setEditingParent({ processId, parent });
-      setParentFormData({ name: parent.name, slaDays: parent.slaDays.toString(), stage: parent.stage || '' });
+      setParentFormData({ 
+        name: parent.name, 
+        shortName: parent.shortName || '',
+        slaDays: parent.slaDays.toString(), 
+        stage: parent.stage || '' 
+      });
     } else {
       setEditingParent({ processId, parent: null });
-      setParentFormData({ name: '', slaDays: '', stage: '' });
+      setParentFormData({ name: '', shortName: '', slaDays: '', stage: '' });
     }
     setIsParentModalOpen(true);
   };
@@ -116,6 +123,7 @@ export default function StepManagementView({ processingAgencies, processes, setP
       const newParent: ParentStep = {
         id: parent?.id || Math.random().toString(36).substr(2, 9),
         name: parentFormData.name,
+        shortName: parentFormData.shortName,
         slaDays: parseInt(parentFormData.slaDays) || 0,
         stage: parentFormData.stage,
         childSteps: parent?.childSteps || []
@@ -145,13 +153,14 @@ export default function StepManagementView({ processingAgencies, processes, setP
       setEditingChild({ processId, parentId, child });
       setChildFormData({ 
         name: child.name, 
+        shortName: child.shortName || '',
         agency: child.agency, 
         department: child.department || '',
         slaDays: child.slaDays.toString() 
       });
     } else {
       setEditingChild({ processId, parentId, child: null });
-      setChildFormData({ name: '', agency: '', department: '', slaDays: '' });
+      setChildFormData({ name: '', shortName: '', agency: '', department: '', slaDays: '' });
     }
     setIsChildModalOpen(true);
   };
@@ -171,6 +180,7 @@ export default function StepManagementView({ processingAgencies, processes, setP
           const newChild: ChildStep = {
             id: child?.id || Math.random().toString(36).substr(2, 9),
             name: childFormData.name,
+            shortName: childFormData.shortName,
             agency: childFormData.agency,
             department: childFormData.agency === 'Sở Xây dựng' ? childFormData.department : undefined,
             slaDays: parseInt(childFormData.slaDays) || 0
@@ -250,7 +260,14 @@ export default function StepManagementView({ processingAgencies, processes, setP
                           {expandedParentIds.includes(parent.id) ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
                         </button>
                         <div>
-                          <h3 className="text-lg font-bold text-slate-900">{parent.name}</h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-lg font-bold text-slate-900">{parent.name}</h3>
+                            {parent.shortName && (
+                              <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-black rounded uppercase tracking-wider">
+                                {parent.shortName}
+                              </span>
+                            )}
+                          </div>
                           <div className="flex items-center gap-3 mt-1">
                             <span className="text-sm text-slate-400 font-medium flex items-center gap-1">
                               <Clock size={12} /> {parent.slaDays} ngày thực hiện
@@ -302,7 +319,14 @@ export default function StepManagementView({ processingAgencies, processes, setP
                                     <GitBranch size={18} />
                                   </div>
                                   <div>
-                                    <p className="text-base font-bold text-slate-700">{child.name}</p>
+                                    <div className="flex items-center gap-2">
+                                      <p className="text-base font-bold text-slate-700">{child.name}</p>
+                                      {child.shortName && (
+                                        <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded uppercase tracking-wider">
+                                          {child.shortName}
+                                        </span>
+                                      )}
+                                    </div>
                                     <div className="flex items-center gap-3 mt-1">
                                       <span className="text-sm text-slate-400 font-medium flex items-center gap-1">
                                         <Building2 size={12} /> {child.agency} {child.department && ` - ${child.department}`}
@@ -373,7 +397,17 @@ export default function StepManagementView({ processingAgencies, processes, setP
                       type="text" 
                       value={parentFormData.name}
                       onChange={e => setParentFormData({...parentFormData, name: e.target.value})}
-                      placeholder="Nhập tên bước..."
+                      placeholder="Nhập tên thủ tục..."
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-lg font-bold outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-black text-slate-400 uppercase tracking-widest">Tên viết tắt</label>
+                    <input 
+                      type="text" 
+                      value={parentFormData.shortName}
+                      onChange={e => setParentFormData({...parentFormData, shortName: e.target.value})}
+                      placeholder="VD: GPXD, CTCT..."
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-lg font-bold outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 transition-all"
                     />
                   </div>
@@ -435,6 +469,16 @@ export default function StepManagementView({ processingAgencies, processes, setP
                       value={childFormData.name}
                       onChange={e => setChildFormData({...childFormData, name: e.target.value})}
                       placeholder="Nhập tên bước..."
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-lg font-bold outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-black text-slate-400 uppercase tracking-widest">Tên viết tắt</label>
+                    <input 
+                      type="text" 
+                      value={childFormData.shortName}
+                      onChange={e => setChildFormData({...childFormData, shortName: e.target.value})}
+                      placeholder="VD: CBTN, TĐ..."
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-lg font-bold outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 transition-all"
                     />
                   </div>

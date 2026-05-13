@@ -129,7 +129,7 @@ export default function ProcessGanttView({ projects: initialProjects = [] }: Pro
                             <span className={`px-1.5 py-0.5 rounded-[4px] text-[10px] font-bold uppercase tracking-widest ${
                               project.status === 'Delayed' || project.status === 'Warning' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'
                             }`}>
-                              {project.status === 'Delayed' || project.status === 'Warning' ? 'Quá hạn' : 'Đúng tiến độ'}
+                              {project.status === 'Delayed' || project.status === 'Warning' ? 'Quá hạn' : 'Đang xử lý'}
                             </span>
                             <span className="text-[10px] font-semibold text-slate-300 uppercase tracking-widest">{project.code}</span>
                           </div>
@@ -143,7 +143,7 @@ export default function ProcessGanttView({ projects: initialProjects = [] }: Pro
                               <div 
                                 className={`w-full h-1.5 rounded-full relative overflow-hidden ${
                                   status === 'completed' ? 'bg-emerald-500' :
-                                  status === 'processing' ? 'bg-blue-600' :
+                                  status === 'processing' ? 'bg-amber-400' :
                                   status === 'delayed' ? 'bg-rose-500' :
                                   'bg-slate-100'
                                 }`}
@@ -162,7 +162,7 @@ export default function ProcessGanttView({ projects: initialProjects = [] }: Pro
                               </p>
                               <div className="h-3">
                                 {status === 'processing' && (
-                                  <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 uppercase tracking-tighter">
+                                  <div className="flex items-center gap-1 text-[9px] font-bold text-amber-600 uppercase tracking-tighter">
                                     <Clock size={8} />
                                     <span>Đang xử lý</span>
                                   </div>
@@ -211,7 +211,7 @@ export default function ProcessGanttView({ projects: initialProjects = [] }: Pro
               <span className="text-sm font-bold text-slate-600">Đã hoàn thành</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-blue-600" />
+              <div className="w-3 h-3 rounded-full bg-amber-400" />
               <span className="text-sm font-bold text-slate-600">Đang thực hiện</span>
             </div>
             <div className="flex items-center gap-2">

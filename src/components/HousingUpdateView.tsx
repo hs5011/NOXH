@@ -110,6 +110,27 @@ export default function HousingUpdateView({
   const [currentStatus, setCurrentStatus] = useState<string>('Đang xử lý');
   const [processingContent, setProcessingContent] = useState<string>('');
 
+  const getStepDateKey = (stepName: string, parentName: string = "", isInvestor: boolean = false) => {
+    const lowerStep = stepName?.toLowerCase() || "";
+    const lowerParent = parentName?.toLowerCase() || "";
+    const combined = (lowerStep + " " + lowerParent).toLowerCase();
+    
+    const suffix = isInvestor ? "_cdt_date" : "_nn_date";
+    
+    if (combined.includes("chủ trương")) return "chutruong" + suffix;
+    if (combined.includes("quy hoạch")) return "qh1500" + suffix;
+    if (combined.includes("giao đất") || combined.includes("thuê đất") || combined.includes("qd giao đất")) return "qdgiaodat" + suffix;
+    if (combined.includes("bc nckt") || combined.includes("nghiên cứu khả thi") || combined.includes("thẩm duyệt bc nckt")) return "baocaonckt" + suffix;
+    if (combined.includes("pccc")) return "pccc" + suffix;
+    if (combined.includes("hạ tầng kỹ thuật") || combined.includes("htkt")) return "htkt_dtm" + suffix;
+    if (combined.includes("giấy phép xây dựng") || combined.includes("gpxd")) return "gpxaydung" + suffix;
+    
+    // Fallback for public investment specific steps if they don't have their own keys
+    if (combined.includes("nhiệm vụ chuẩn bị đầu tư")) return "chutruong" + suffix;
+    
+    return null;
+  };
+
   const selectedProcess = processes.find(p => p.id === project.processId);
   const steps: ExtendedParentStep[] = selectedProcess?.parentSteps || [];
 
@@ -305,29 +326,29 @@ export default function HousingUpdateView({
                   <ArrowLeft size={20} />
                 </button>
               )}
-              <span className="px-3 py-1 bg-blue-50 text-blue-600 text-sm font-black uppercase tracking-widest rounded-full border border-blue-100">
+              <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[11px] font-black uppercase tracking-widest rounded-full border border-blue-100">
                 {project.code}
               </span>
-              <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-sm font-black uppercase tracking-widest rounded-full border border-emerald-100">
-                {project.status === 'Delayed' ? 'Chậm tiến độ' : 'Đang xử lý'}
+              <span className="px-3 py-1 bg-emerald-50 text-emerald-600 text-[11px] font-black uppercase tracking-widest rounded-full border border-emerald-100">
+                {project.status === 'Delayed' || project.status === 'Trễ' ? 'Chậm tiến độ' : 'Đang xử lý'}
               </span>
             </div>
-            <h1 className="text-4xl font-black text-slate-900 mb-2">{project.name}</h1>
+            <h1 className="text-xl font-black text-slate-900 mb-2">{project.name}</h1>
             
             <div className="flex flex-col gap-2 mb-4">
               <div className="flex items-center gap-2">
-                <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Quy trình:</p>
-                <p className="text-base font-black text-blue-600 uppercase">{selectedProcess?.name || 'Chưa gán quy trình'}</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Quy trình:</p>
+                <p className="text-xs font-black text-blue-600 uppercase">{selectedProcess?.name || 'Chưa gán quy trình'}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 text-slate-500 text-lg">
+            <div className="flex items-center gap-4 text-slate-500 text-sm">
               <div className="flex items-center gap-1.5">
-                <Building2 size={20} />
+                <Building2 size={18} />
                 <span className="font-medium">{project.investor}</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <MapPin size={20} />
+                <MapPin size={18} />
                 <span className="font-medium">{project.location}</span>
               </div>
             </div>
@@ -341,24 +362,24 @@ export default function HousingUpdateView({
       <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm flex flex-col overflow-hidden">
         <div className="p-6 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg bg-blue-600">
-              <FileText size={24} />
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-lg bg-blue-600">
+              <FileText size={18} />
             </div>
             <div className="flex flex-col">
-              <h3 className="text-2xl font-black text-slate-900 leading-tight">Cập nhật tiến độ bước</h3>
-              <p className="text-sm text-slate-400 font-bold uppercase tracking-widest">{activeStep?.name}</p>
+              <h3 className="text-lg font-black text-slate-900 leading-tight">Cập nhật tiến độ bước</h3>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{activeStep?.name}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <button 
               onClick={handleSave}
               disabled={isSaving}
-              className={`flex items-center gap-2 px-8 py-2.5 bg-blue-600 text-white rounded-xl text-lg font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
+              className={`flex items-center gap-2 px-5 py-1.5 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
               {isSaving ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
-                <Save size={22} />
+                <Save size={18} />
               )}
               {isSaving ? 'Đang lưu...' : 'Lưu cập nhật'}
             </button>
@@ -369,33 +390,51 @@ export default function HousingUpdateView({
           {/* Vùng 1: Thông tin bước hiện tại (Trên cùng, Full Width) */}
           <div className="space-y-6 pb-8 border-b border-slate-100">
             <div className="flex items-center gap-2">
-              <div className="w-1.5 h-5 bg-blue-600 rounded-full" />
-              <h4 className="text-xl font-black text-slate-900 uppercase tracking-widest">THÔNG TIN BƯỚC</h4>
+              <div className="w-1.5 h-3.5 bg-blue-600 rounded-full" />
+              <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">THÔNG TIN BƯỚC</h4>
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               <div className="lg:col-span-8 space-y-6">
                 <div className="space-y-1">
-                  <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Tên thủ tục</p>
-                  <p className="text-2xl font-black text-slate-900 leading-tight tracking-tight">{activeStep?.name}</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tên thủ tục</p>
+                  <p className="text-base font-black text-slate-900 leading-tight tracking-tight">{activeStep?.name}</p>
                 </div>
                 
                 <div className="space-y-1">
-                  <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Tên bước con</p>
-                  <p className="text-2xl font-black text-blue-600 leading-tight tracking-tight">{activeSubStep?.name || '---'}</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tên bước con</p>
+                  <p className="text-lg font-black text-blue-600 leading-tight tracking-tight">{activeSubStep?.name || '---'}</p>
                 </div>
               </div>
 
               <div className="lg:col-span-4 flex flex-col justify-end space-y-4">
-                <p className="text-sm font-black text-slate-400 uppercase tracking-widest">HXL (Kế hoạch)</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">HXL (Kế hoạch)</p>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                    <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">CQNN:</span>
-                    <span className="text-xl font-black text-slate-700">{formatDate(project.milestones?.[activeSubStep?.id || '']?.agency) || '---'}</span>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">CQNN:</span>
+                    <span className="text-base font-black text-slate-700">
+                      {(() => {
+                        let date = project.milestones?.[activeSubStep?.id || '']?.agency;
+                        if (!date) {
+                          const key = getStepDateKey(activeSubStep?.name || "", activeStep?.name || "", false);
+                          if (key && project[key]) date = project[key];
+                        }
+                        return formatDate(date) || '---';
+                      })()}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                    <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">CĐT:</span>
-                    <span className="text-xl font-black text-slate-700">{formatDate(project.milestones?.[activeSubStep?.id || '']?.investor) || '---'}</span>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">CĐT:</span>
+                    <span className="text-base font-black text-slate-700">
+                      {(() => {
+                        let date = project.milestones?.[activeSubStep?.id || '']?.investor;
+                        if (!date) {
+                          const key = getStepDateKey(activeSubStep?.name || "", activeStep?.name || "", true);
+                          if (key && project[key]) date = project[key];
+                        }
+                        return formatDate(date) || '---';
+                      })()}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -406,8 +445,8 @@ export default function HousingUpdateView({
             {/* Vùng 2: Nội dung xử lý (Bên trái) */}
             <div className="space-y-8">
               <div className="flex items-center gap-2">
-                <div className="w-1.5 h-5 bg-blue-600 rounded-full" />
-                <h4 className="text-xl font-black text-slate-900 uppercase tracking-widest">NỘI DUNG XỬ LÝ</h4>
+                <div className="w-1.5 h-4 bg-blue-600 rounded-full" />
+                <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">NỘI DUNG XỬ LÝ</h4>
               </div>
 
               <div className="space-y-6">
@@ -482,8 +521,8 @@ export default function HousingUpdateView({
             {/* Vùng 3: Cập nhật trạng thái (Bên phải) */}
             <div className="space-y-8">
               <div className="flex items-center gap-2">
-                <div className="w-1.5 h-5 bg-blue-600 rounded-full" />
-                <h4 className="text-xl font-black text-slate-900 uppercase tracking-widest">CẬP NHẬT TRẠNG THÁI</h4>
+                <div className="w-1.5 h-4 bg-blue-600 rounded-full" />
+                <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">CẬP NHẬT TRẠNG THÁI</h4>
               </div>
 
               <div className="space-y-8">
@@ -532,8 +571,8 @@ export default function HousingUpdateView({
 
                 <div className="space-y-6">
                   <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-5 bg-blue-600 rounded-full" />
-                    <h4 className="text-xl font-black text-slate-900 uppercase tracking-widest">NGÀY HOÀN THÀNH DỰ KIẾN</h4>
+                    <div className="w-1.5 h-4 bg-blue-600 rounded-full" />
+                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">NGÀY HOÀN THÀNH DỰ KIẾN</h4>
                   </div>
                   
                   <div className="grid grid-cols-1 gap-4">
@@ -655,9 +694,9 @@ export default function HousingUpdateView({
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-slate-100">
-                      <th className="px-4 py-3 text-left text-sm font-black text-slate-400 uppercase tracking-widest">Tên bước con</th>
-                      <th className="px-4 py-3 text-center text-sm font-black text-slate-400 uppercase tracking-widest bg-emerald-50/50 rounded-t-xl">Cơ quan xử lý</th>
-                      <th className="px-4 py-3 text-center text-sm font-black text-slate-400 uppercase tracking-widest bg-blue-50/50 rounded-t-xl">Chủ đầu tư</th>
+                      <th className="px-4 py-3 text-left text-xs font-black text-slate-400 uppercase tracking-widest">Tên bước con</th>
+                      <th className="px-4 py-3 text-center text-xs font-black text-slate-400 uppercase tracking-widest bg-emerald-50/50 rounded-t-xl">Cơ quan xử lý</th>
+                      <th className="px-4 py-3 text-center text-xs font-black text-slate-400 uppercase tracking-widest bg-blue-50/50 rounded-t-xl">Chủ đầu tư</th>
                     </tr>
                     <tr className="border-b border-slate-100">
                       <th className="px-4 py-2"></th>
@@ -691,20 +730,27 @@ export default function HousingUpdateView({
                         >
                           <td className="px-4 py-4">
                             <div className="flex items-center gap-3">
-                              {isActive && <div className="w-1.5 h-10 bg-blue-600 rounded-full shrink-0" />}
+                              {isActive && <div className="w-1 h-8 bg-blue-600 rounded-full shrink-0" />}
                               <div>
-                                <p className={`text-base font-bold ${isActive ? 'text-blue-700' : 'text-slate-700'}`}>{child.name}</p>
-                                <p className="text-xs text-slate-400 font-medium">{child.agency}</p>
+                                <p className={`text-sm font-bold ${isActive ? 'text-blue-700' : 'text-slate-700'}`}>{child.name}</p>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{child.agency}</p>
                               </div>
                             </div>
                           </td>
                           <td className="px-4 py-4 bg-emerald-50/10">
                             <div className="grid grid-cols-2 gap-2 items-center">
-                              <span className="text-sm font-bold text-slate-600 text-center">
-                                {formatDate(milestone?.agency)}
+                              <span className="text-xs font-bold text-slate-600 text-center">
+                                {(() => {
+                                  let date = project.milestones?.[child.id]?.agency;
+                                  if (!date) {
+                                    const key = getStepDateKey(child.name, activeStep?.name || "", false);
+                                    if (key && project[key]) date = project[key];
+                                  }
+                                  return formatDate(date);
+                                })()}
                               </span>
-                              <span className={`text-sm font-bold text-center px-2 py-1 rounded ${
-                                actual?.agencyActualDate && milestone?.agency && actual.agencyActualDate > milestone.agency 
+                              <span className={`text-[11px] font-bold text-center px-2 py-1 rounded ${
+                                actual?.agencyActualDate && project.milestones?.[child.id]?.agency && actual.agencyActualDate > project.milestones[child.id].agency 
                                   ? 'text-rose-600 bg-rose-50' 
                                   : actual?.agencyActualDate ? 'text-blue-600 bg-blue-50' : 'text-slate-400'
                               }`}>
@@ -714,11 +760,18 @@ export default function HousingUpdateView({
                           </td>
                           <td className="px-4 py-4 bg-blue-50/10">
                             <div className="grid grid-cols-2 gap-2 items-center">
-                              <span className="text-sm font-bold text-slate-600 text-center">
-                                {formatDate(milestone?.investor)}
+                              <span className="text-xs font-bold text-slate-600 text-center">
+                                {(() => {
+                                  let date = project.milestones?.[child.id]?.investor;
+                                  if (!date) {
+                                    const key = getStepDateKey(child.name, activeStep?.name || "", true);
+                                    if (key && project[key]) date = project[key];
+                                  }
+                                  return formatDate(date);
+                                })()}
                               </span>
-                              <span className={`text-sm font-bold text-center px-2 py-1 rounded ${
-                                actual?.investorActualDate && milestone?.investor && actual.investorActualDate > milestone.investor 
+                              <span className={`text-[11px] font-bold text-center px-2 py-1 rounded ${
+                                actual?.investorActualDate && project.milestones?.[child.id]?.investor && actual.investorActualDate > project.milestones[child.id].investor 
                                   ? 'text-rose-600 bg-rose-50' 
                                   : actual?.investorActualDate ? 'text-blue-600 bg-blue-50' : 'text-slate-400'
                               }`}>

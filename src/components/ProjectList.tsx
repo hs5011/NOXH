@@ -30,6 +30,7 @@ interface ProjectListProps {
   fundingSources?: string[];
   followers?: string[];
   investors?: string[];
+  projectCategories?: string[];
 }
 
 export default function ProjectList({ 
@@ -50,7 +51,8 @@ export default function ProjectList({
   projectGroups = [],
   fundingSources = [],
   followers = [],
-  investors = []
+  investors = [],
+  projectCategories = []
 }: ProjectListProps) {
   const [projects, setProjects] = useState<any[]>(initialProjects);
   const [loading, setLoading] = useState(false);
@@ -66,31 +68,36 @@ export default function ProjectList({
   const [followerFilter, setFollowerFilter] = useState('');
   const [investorFilter, setInvestorFilter] = useState('');
   const [stageFilter, setStageFilter] = useState('');
+  const [stepFilter, setStepFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
 
   useEffect(() => {
-    let filtered = initialProjects;
+    // Reset filters
+    setSearchTerm('');
+    setProcessFilter('');
+    setGroupFilter('');
+    setFundingFilter('');
+    setLocationFilter('');
+    setFollowerFilter('');
+    setInvestorFilter('');
+    setStageFilter('');
+    setStepFilter('');
+    setStatusFilter('');
+    setCategoryFilter('');
+
     if (filter) {
-      if (filter.searchTerm) {
-        setSearchTerm(filter.searchTerm);
-      }
-      
-      if (filter.id) {
-        filtered = initialProjects.filter((p: any) => p.id === filter.id);
-      } else if (filter.status) {
-        filtered = initialProjects.filter((p: any) => p.status === filter.status);
-      } else if (filter.isKeyProject) {
-        filtered = initialProjects.filter((p: any) => p.isKeyProject);
-      } else if (filter.step) {
-        filtered = initialProjects.filter((p: any) => p.childStep === filter.step || p.currentStep === filter.step);
-      } else if (filter.alert) {
-        filtered = initialProjects.filter((p: any) => p.status === 'Delayed' || p.alert === filter.alert);
-      } else if (filter.region) {
-        filtered = initialProjects.filter((p: any) => p.location.includes(filter.region));
-      }
-    } else {
-      setSearchTerm('');
+      if (filter.searchTerm) setSearchTerm(filter.searchTerm);
+      if (filter.status) setStatusFilter(filter.status);
+      if (filter.step) setStepFilter(filter.step);
+      if (filter.region) setLocationFilter(filter.region);
+      if (filter.investor) setInvestorFilter(filter.investor);
+      if (filter.stage) setStageFilter(filter.stage);
+      if (filter.alert) setStatusFilter(filter.alert === 'Delayed' ? 'Delayed' : filter.alert);
+      if (filter.id) setSearchTerm(filter.id);
     }
-    setProjects(filtered);
+    
+    setProjects(initialProjects);
   }, [filter, initialProjects]);
 
 
@@ -99,18 +106,43 @@ export default function ProjectList({
       p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.investor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (p.location && p.location.toLowerCase().includes(searchTerm.toLowerCase()));
+      (p.location && p.location.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      p.id === searchTerm;
     
     const processMatch = processFilter === '' || p.processId === processFilter;
     const groupMatch = groupFilter === '' || p.projectGroup === groupFilter;
     const fundingMatch = fundingFilter === '' || p.fundingSource === fundingFilter;
-    const locationMatch = locationFilter === '' || p.location === locationFilter;
+    const locationMatch = locationFilter === '' || (p.location && p.location.includes(locationFilter));
     const followerMatch = followerFilter === '' || p.follower === followerFilter;
     const investorMatch = investorFilter === '' || p.investor === investorFilter;
     const stageMatch = stageFilter === '' || p.stage === stageFilter;
+    const stepMatch = stepFilter === '' || p.childStep === stepFilter || p.currentStep === stepFilter;
+    const statusMatch = statusFilter === '' || p.status === statusFilter || (statusFilter === 'Delayed' && p.status === 'Warning');
+    const categoryMatch = !categoryFilter || p.projectCategory === categoryFilter;
 
-    return searchMatch && processMatch && groupMatch && fundingMatch && locationMatch && followerMatch && investorMatch && stageMatch;
+    return searchMatch && processMatch && groupMatch && fundingMatch && locationMatch && followerMatch && investorMatch && stageMatch && stepMatch && statusMatch && categoryMatch;
   });
+
+  const getStepDateKey = (stepName: string, parentName: string = "", isInvestor: boolean = false) => {
+    const lowerStep = stepName?.toLowerCase() || "";
+    const lowerParent = parentName?.toLowerCase() || "";
+    const combined = (lowerStep + " " + lowerParent).toLowerCase();
+    
+    const suffix = isInvestor ? "_cdt_date" : "_nn_date";
+    
+    if (combined.includes("chủ trương")) return "chutruong" + suffix;
+    if (combined.includes("quy hoạch")) return "qh1500" + suffix;
+    if (combined.includes("giao đất") || combined.includes("thuê đất") || combined.includes("qd giao đất")) return "qdgiaodat" + suffix;
+    if (combined.includes("bc nckt") || combined.includes("nghiên cứu khả thi") || combined.includes("thẩm duyệt bc nckt")) return "baocaonckt" + suffix;
+    if (combined.includes("pccc")) return "pccc" + suffix;
+    if (combined.includes("hạ tầng kỹ thuật") || combined.includes("htkt")) return "htkt_dtm" + suffix;
+    if (combined.includes("giấy phép xây dựng") || combined.includes("gpxd")) return "gpxaydung" + suffix;
+    
+    // Fallback for public investment specific steps if they don't have their own keys
+    if (combined.includes("nhiệm vụ chuẩn bị đầu tư")) return "chutruong" + suffix;
+    
+    return null;
+  };
 
   const getProjectStatusDetails = (p: any) => {
     const process = processes.find(proc => proc.id === p.processId);
@@ -119,42 +151,94 @@ export default function ProjectList({
     const allSteps: any[] = [];
     process.parentSteps.forEach(ps => {
       ps.childSteps.forEach(cs => {
+        // Try to get data from structured milestone/plan first
         const m = p.milestones?.[cs.id];
-        const actual = p.implementationPlan?.[cs.id]?.agencyActualDate;
+        const plan = p.implementationPlan?.[cs.id];
+        
+        let invDeadline = m?.investor;
+        let agyDeadline = m?.agency;
+        let actual = plan?.agencyActualDate;
+
+        // Fallback to flat props from appData.ts / DashboardApp pattern
+        if (!invDeadline) {
+          const invKey = getStepDateKey(cs.name, ps.name, true);
+          if (invKey && p[invKey]) invDeadline = p[invKey];
+        }
+        if (!agyDeadline) {
+          const agyKey = getStepDateKey(cs.name, ps.name, false);
+          if (agyKey && p[agyKey]) agyDeadline = p[agyKey];
+        }
+
+        // If deadline is 'X' in initial data, it might mean it's already done
+        if ((invDeadline === 'X' || agyDeadline === 'X') && !actual) {
+          actual = 'X';
+        }
+
         allSteps.push({ 
           id: cs.id, 
           parentId: ps.id,
           name: cs.name, 
           agency: cs.agency, 
           parentName: ps.name,
-          stage: ps.stage, // Added stage property
-          investorDeadline: m?.investor,
-          agencyDeadline: m?.agency,
+          stage: ps.stage,
+          investorDeadline: invDeadline,
+          agencyDeadline: agyDeadline,
           actualDate: actual
         });
       });
     });
 
-    const noStepsCompleted = allSteps.every(step => !step.actualDate);
-    const activeSteps = allSteps.filter(s => {
-      if (s.actualDate) return false;
+    // Priority 1: Match the currentStep name or childStep name from project data
+    const currentStepInProcess = allSteps.find(s => 
+      s.name === p.currentStep || s.name === p.childStep
+    );
+    if (currentStepInProcess) {
+      return [currentStepInProcess];
+    }
+
+    // Priority 2: Fuzzy match - check if currentStep and process step share similar starting words
+    const fuzzyMatch = allSteps.find(s => {
+      if (!p.currentStep && !p.childStep) return false;
+      const sName = s.name.toLowerCase();
+      const pCurrent = p.currentStep?.toLowerCase() || "";
+      const pChild = p.childStep?.toLowerCase() || "";
       
-      // A step is active if it has a milestone date
-      const hasMilestone = !!s.investorDeadline || !!s.agencyDeadline;
-      if (hasMilestone) return true;
+      // Check if one contains the other
+      if (sName.includes(pCurrent) || pCurrent.includes(sName)) return true;
+      if (sName.includes(pChild) || pChild.includes(sName)) return true;
       
-      // Or if it's the very first step and no steps are completed yet
-      const isFirstStep = s.id === allSteps[0]?.id;
-      if (noStepsCompleted && isFirstStep) return true;
+      // Check if they start with the same verb (e.g. "Thẩm định")
+      const sWords = sName.split(' ').filter(w => w.length > 2);
+      const pWords = pCurrent.split(' ').filter(w => w.length > 2);
+      if (sWords[0] === pWords[0] && sWords[0] !== undefined) return true;
       
       return false;
     });
+    if (fuzzyMatch) {
+      return [fuzzyMatch];
+    }
+
+    // Priority 3: Find the first step that is not completed and has a deadline
+    const firstIncompleteWithDeadline = allSteps.find(s => 
+      (!s.actualDate || s.actualDate === '-' || s.actualDate === '') && 
+      (s.agencyDeadline && s.agencyDeadline !== 'X' && s.agencyDeadline !== '-')
+    );
+    if (firstIncompleteWithDeadline) {
+      return [firstIncompleteWithDeadline];
+    }
+
+    // Priority 4: Find the first step that is not completed
+    const firstIncomplete = allSteps.find(s => !s.actualDate || s.actualDate === '-' || s.actualDate === '');
+    if (firstIncomplete) {
+      return [firstIncomplete];
+    }
     
-    if (activeSteps.length === 0 && allSteps.length > 0) {
-      // If all steps are completed, show the last one
+    // Priority 5: Return the last step if all are completed
+    if (allSteps.length > 0) {
       return [allSteps[allSteps.length - 1]];
     }
-    return activeSteps;
+
+    return [];
   };
 
   const formatDate = (dateStr: string) => {
@@ -171,10 +255,28 @@ export default function ProjectList({
     }
   };
 
+  const parseVNDate = (dateStr: string) => {
+    if (!dateStr || dateStr === 'X' || dateStr === '-') return null;
+    const parts = dateStr.split('/');
+    if (parts.length !== 3) {
+      const d = new Date(dateStr);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    const day = parseInt(parts[0]);
+    const month = parseInt(parts[1]) - 1;
+    const year = parseInt(parts[2]);
+    const fullYear = year < 100 ? 2000 + year : year;
+    return new Date(fullYear, month, day);
+  };
+
   const isDelayed = (deadline: string, actual: string) => {
-    if (actual) return false;
-    if (!deadline) return false;
-    return new Date() > new Date(deadline);
+    if (actual && actual !== '-') return false;
+    if (!deadline || deadline === 'X') return false;
+    
+    const deadlineDate = parseVNDate(deadline);
+    if (!deadlineDate) return false;
+    
+    return new Date() > deadlineDate;
   };
 
   const isCompleted = (actual: string) => !!actual;
@@ -218,7 +320,9 @@ export default function ProjectList({
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Danh sách Dự án NOXH</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
+            {statusFilter === 'Delayed' ? 'KH bị chậm' : statusFilter === 'On Track' ? 'CQNN đang xử lý' : 'Danh sách Dự án NOXH'}
+          </h2>
           <p className="text-slate-500 text-xs sm:text-sm">
             Đang hiển thị {filteredProjects.length} dự án
           </p>
@@ -291,7 +395,21 @@ export default function ProjectList({
             className="w-full pl-3 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer appearance-none"
           >
             <option value="">Địa điểm</option>
-            {locations.map(loc => <option key={loc.ward} value={loc.ward}>{loc.ward}</option>)}
+            {Array.from(new Set([
+              ...locations.map(l => l.ward),
+              ...locations.map(l => l.oldArea)
+            ])).filter(Boolean).sort().map(loc => <option key={loc} value={loc}>{loc}</option>)}
+          </select>
+          <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+        </div>
+        <div className="relative">
+          <select 
+            value={categoryFilter} 
+            onChange={(e) => setCategoryFilter(e.target.value)} 
+            className="w-full pl-3 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer appearance-none"
+          >
+            <option value="">Phân loại dự án</option>
+            {projectCategories.map(pc => <option key={pc} value={pc}>{pc}</option>)}
           </select>
           <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         </div>
@@ -328,12 +446,39 @@ export default function ProjectList({
           </select>
           <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
         </div>
+        <div className="relative">
+          <select 
+            value={stepFilter} 
+            onChange={(e) => setStepFilter(e.target.value)} 
+            className="w-full pl-3 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer appearance-none"
+          >
+            <option value="">Thủ tục</option>
+            {Array.from(new Set([
+              ...projectSteps,
+              ...processes.flatMap(p => p.parentSteps.flatMap(ps => ps.childSteps.map(cs => cs.name)))
+            ])).filter(Boolean).sort().map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+        </div>
+        <div className="relative">
+          <select 
+            value={statusFilter} 
+            onChange={(e) => setStatusFilter(e.target.value)} 
+            className="w-full pl-3 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer appearance-none"
+          >
+            <option value="">Trạng thái</option>
+            <option value="On Track">Đúng tiến độ</option>
+            <option value="Delayed">Trễ hạn</option>
+            <option value="Warning">Cảnh báo</option>
+          </select>
+          <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+        </div>
       </div>
 
-      <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         {/* Header Row */}
-        <div className="bg-slate-50/50 border-b border-slate-100 flex items-center justify-between px-4 sm:px-10 py-3 sm:py-5">
-          <div className="text-[11px] sm:text-[13px] font-black text-slate-400 uppercase tracking-[0.1em] sm:tracking-[0.2em] ml-10 sm:ml-16">Thông tin dự án & Tiến độ</div>
+        <div className="bg-slate-50 border-b border-slate-100 flex items-center justify-between px-5 py-3">
+          <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-12">Thông tin dự án & Tiến độ</div>
         </div>
 
         {/* Project Cards List */}
@@ -341,143 +486,89 @@ export default function ProjectList({
           {paginatedProjects.length > 0 ? paginatedProjects.map((p) => {
             const statusDetails = getProjectStatusDetails(p);
             return (
-              <div key={p.id} className="p-4 sm:p-8 hover:bg-blue-50/10 transition-all flex flex-col group relative">
+              <div key={p.id} className="p-3 sm:p-4 hover:bg-slate-50/50 transition-all flex flex-col group relative">
                 {/* Project Info Section */}
                 <div className="w-full">
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 sm:gap-5 mb-4 sm:mb-8">
-                    <div className="flex items-start gap-3 sm:gap-5">
-                      <div className="mt-1 w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 shadow-sm">
-                        <CheckCircle2 size={14} className="sm:hidden" />
-                        <CheckCircle2 size={18} className="hidden sm:block" />
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0 border border-emerald-100">
+                        <CheckCircle2 size={14} />
                       </div>
                       <div className="min-w-0">
-                        <h3 className="text-lg sm:text-2xl font-black text-slate-900 group-hover:text-blue-600 transition-colors leading-tight mb-1">
-                          {p.name} <span className="text-slate-400 font-medium block sm:inline">— {p.location}</span>
+                        <h3 className="text-sm sm:text-base font-black text-slate-900 group-hover:text-blue-600 transition-colors leading-tight">
+                          {p.name}
                         </h3>
-                        <p className="text-[10px] sm:text-sm text-slate-400 font-bold uppercase tracking-[0.1em] sm:tracking-[0.15em]">{p.code}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[9px] font-black bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded uppercase tracking-tighter">{p.code}</span>
+                          <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1">
+                            <MapPin size={10} /> {p.location}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-9 sm:ml-0">
-                      <div className="relative group/action">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); onUpdatePlanClick?.(p); }}
-                          className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all"
-                        >
-                          <Calendar size={20} />
-                        </button>
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900 text-white text-[10px] font-bold rounded-lg opacity-0 invisible group-hover/action:opacity-100 group-hover/action:visible transition-all whitespace-nowrap z-50">
-                          Kế hoạch
+                    <div className="flex items-center gap-1 shrink-0 ml-9 sm:ml-0">
+                      {[
+                        { icon: Calendar, color: 'orange', action: onUpdatePlanClick, label: 'Kế hoạch' },
+                        { icon: Pencil, color: 'blue', action: onEditClick, label: 'Sửa' },
+                        { icon: Trash2, color: 'rose', action: onDeleteClick, label: 'Xóa' }
+                      ].map((btn, bIdx) => (
+                        <div key={bIdx} className="relative group/action">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); btn.action?.(p); }}
+                            className={`w-8 h-8 flex items-center justify-center text-slate-400 hover:text-${btn.color}-600 hover:bg-${btn.color}-50 rounded-lg transition-all`}
+                          >
+                            <btn.icon size={16} />
+                          </button>
                         </div>
-                      </div>
-
-                      <div className="relative group/action">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); onEditClick?.(p); }}
-                          className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
-                        >
-                          <Pencil size={20} />
-                        </button>
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900 text-white text-[10px] font-bold rounded-lg opacity-0 invisible group-hover/action:opacity-100 group-hover/action:visible transition-all whitespace-nowrap z-50">
-                          Sửa
-                        </div>
-                      </div>
-
-                      <div className="relative group/action">
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); onDeleteClick?.(p); }}
-                          className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
-                        >
-                          <Trash2 size={20} />
-                        </button>
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900 text-white text-[10px] font-bold rounded-lg opacity-0 invisible group-hover/action:opacity-100 group-hover/action:visible transition-all whitespace-nowrap z-50">
-                          Xóa
-                        </div>
-                      </div>
+                      ))}
                     </div>
                   </div>
 
                   {/* Steps Nested Cards */}
-                  <div className="ml-0 sm:ml-12 space-y-4 sm:space-y-5">
+                  <div className="ml-0 sm:ml-9 space-y-2">
                     {statusDetails.map((step: any) => {
-                      const currentProcess = processes.find(proc => proc.id === p.processId);
                       const currentStageIndex = projectStages.indexOf(step.stage);
 
                       return (
-                        <div key={step.id} className="bg-white rounded-[20px] sm:rounded-[24px] border border-slate-100 p-4 sm:p-6 shadow-sm hover:shadow-md transition-all border-l-4 border-l-blue-500">
-                          {/* Step Header: Timeline */}
-                          <div className="flex items-center justify-between mb-4 sm:mb-6 overflow-x-auto pb-2 scrollbar-hide">
-                            <div className="flex items-center gap-4 sm:gap-8 min-w-max">
-                              <div className="flex items-center gap-3 sm:gap-5">
-                                {projectStages.map((stage, idx) => {
-                                  const isCurrentStage = idx === currentStageIndex;
-                                  const isCompleted = idx < currentStageIndex;
-                                  
-                                  return (
-                                    <React.Fragment key={stage}>
-                                      <div className="flex items-center gap-2.5 relative group/stage">
-                                        {/* Tooltip */}
-                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 invisible group-hover/stage:opacity-100 group-hover/stage:visible transition-all whitespace-nowrap z-50 shadow-xl">
-                                          {stage}
-                                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-[4px] border-transparent border-t-slate-900" />
-                                        </div>
-
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                                          isCompleted 
-                                            ? 'bg-emerald-500 border border-emerald-600' 
-                                            : isCurrentStage
-                                              ? 'bg-blue-500 border border-blue-600'
-                                              : 'bg-slate-200 border border-slate-300'
-                                        }`}>
-                                          {isCompleted ? (
-                                            <CheckCircle2 size={14} className="text-white" />
-                                          ) : isCurrentStage ? (
-                                            <div className="w-2.5 h-2.5 rounded-full bg-white shadow-sm" />
-                                          ) : (
-                                            <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                                          )}
-                                        </div>
-                                        {isCurrentStage && (
-                                          <span className="text-[11px] font-black uppercase tracking-widest text-blue-600">
-                                            {stage}
-                                          </span>
-                                        )}
-                                      </div>
-                                      {idx < projectStages.length - 1 && <div className={`h-[2px] w-4 ${isCompleted ? 'bg-emerald-500' : 'bg-slate-200'}`} />}
-                                    </React.Fragment>
-                                  );
-                                })}
+                        <div key={step.id} className="bg-white rounded-xl border border-slate-100 p-3 sm:p-4 shadow-sm hover:shadow-md transition-all border-l-4 border-l-blue-500 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="flex-1 min-w-0">
+                            {/* Compressed Stage Indicators */}
+                            <div className="flex items-center gap-1.5 mb-2 overflow-x-auto scrollbar-hide pb-1">
+                              {projectStages.map((stage, idx) => {
+                                const isCurrentStage = idx === currentStageIndex;
+                                const isCompletedStage = idx < currentStageIndex;
+                                return (
+                                  <div key={stage} className={`h-1 flex-1 min-w-[20px] rounded-full ${
+                                    isCompletedStage ? 'bg-emerald-500' : isCurrentStage ? 'bg-blue-500' : 'bg-slate-100'
+                                  }`} title={stage} />
+                                );
+                              })}
+                            </div>
+                            
+                            <div className="space-y-0.5">
+                              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest leading-none">Bước hiện tại</p>
+                              <h4 className="text-sm font-black text-slate-900 leading-tight truncate">{step.name}</h4>
+                              <div className="flex items-center gap-3 mt-1.5">
+                                <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">{step.agency || 'N/A'}</span>
+                                <div className="flex items-center gap-1.5 text-[11px] font-bold">
+                                  <span className="text-slate-400 uppercase tracking-tighter">Hạn xử lý:</span>
+                                  <span className={getStatusColorClass(step.agencyDeadline, step.actualDate)}>
+                                    {formatDate(step.agencyDeadline)}
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </div>
 
-                          {/* Step Details */}
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-10">
-                            <div className="flex-1 space-y-1 sm:space-y-2">
-                              <p className="text-sm sm:text-base font-bold text-slate-700">
-                                Bước hiện tại: <span className="text-slate-900">{step.name}</span>
-                              </p>
-                              <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-slate-500 font-bold">
-                                <span className="text-blue-600">{step.agency || 'N/A'}</span>
-                                <span className="hidden sm:inline text-slate-200">|</span>
-                                <span className="uppercase tracking-widest text-[9px] sm:text-[11px]">HXL:</span>
-                                <span className={getStatusColorClass(step.agencyDeadline, step.actualDate)}>
-                                  {formatDate(step.agencyDeadline)}
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="relative group/tooltip shrink-0">
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); onHousingUpdateClick?.(p, step.parentId, step.id); }}
-                                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 sm:py-2.5 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm border border-blue-100 group/btn"
-                              >
-                                <GitBranch size={16} className="sm:size-[18px] group-hover/btn:rotate-12 transition-transform" />
-                                <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest">Cập nhật tiến độ</span>
-                              </button>
-                            </div>
-                          </div>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); onHousingUpdateClick?.(p, step.parentId, step.id); }}
+                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm border border-blue-700 group/btn shrink-0"
+                          >
+                            <GitBranch size={14} className="group-hover/btn:rotate-12 transition-transform" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Cập nhật</span>
+                          </button>
                         </div>
                       );
                     })}
