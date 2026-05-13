@@ -1845,34 +1845,52 @@ export const INITIAL_PROCESSES = [
         ]
       },
       {
-        "id": "ps4",
-        "name": "Cấp giấy phép xây dựng",
-        "shortName": "GPXD",
+        "id": "ps10",
+        "name": "Đầu nối hạ tầng kỹ thuật",
+        "shortName": "ĐN HTKT",
         "slaDays": 15,
         "stage": "CHUẨN BỊ ĐẦU TƯ",
-        "childSteps": [
-          {
+        "childSteps": [       
+		      {
+            "id": "cs83",
+            "name": "Đầu nối hạ tầng kỹ thuật",
+            "shortName": "ĐN HTKT",
+            "agency": "Sở Xây dựng",
+            "department": "Phòng QLBT & KTCTGT",
+            "slaDays": 15
+          }
+        ]
+      },
+      {
+        "id": "ps11",
+        "name": "Thẩm duyệt PCCC",
+        "shortName": "TD PCCC",
+        "slaDays": 15,
+        "stage": "CHUẨN BỊ ĐẦU TƯ",
+        "childSteps": [       
+		      {
             "id": "cs81",
             "name": "Thẩm duyệt PCCC",
             "shortName": "TD PCCC",
             "agency": "Công an TP (PCCC)",
             "department": "",
             "slaDays": 10
-          },
-		  {
+          }
+        ]
+      },
+      {
+        "id": "ps4",
+        "name": "Cấp giấy phép xây dựng",
+        "shortName": "GPXD",
+        "slaDays": 15,
+        "stage": "CHUẨN BỊ ĐẦU TƯ",
+        "childSteps": [          
+		      {
             "id": "cs82",
             "name": "Cấp Giấy phép môi trường",
             "shortName": "CPMT",
             "agency": "Sở NNMT",
             "department": "",
-            "slaDays": 15
-          },
-		  {
-            "id": "cs83",
-            "name": "Đầu nối hạ tầng kỹ thuật",
-            "shortName": "ĐN HTKT",
-            "agency": "Sở Xây dựng",
-            "department": "Phòng QLBT & KTCTGT",
             "slaDays": 15
           },
           {

@@ -232,7 +232,7 @@ export default function DashboardView({
                 <TrendingUp size={80} strokeWidth={1} />
               </div>
               <div className="relative z-10 text-center flex flex-col h-full justify-center">
-                <h4 className="text-[11px] font-black text-blue-900 uppercase tracking-widest mb-1 leading-tight">Chấp thuận chủ trương ĐT</h4>
+                <h4 className="text-[11px] font-black text-blue-900 uppercase tracking-widest mb-1 leading-tight">Chấp thuận CTĐT</h4>
                 <div className="h-px bg-blue-200/50 w-full my-2"></div>
                 <div className="flex flex-col items-center gap-3">
                   <div className="flex items-baseline gap-2">
@@ -304,7 +304,7 @@ export default function DashboardView({
                 <Building size={80} strokeWidth={1} />
               </div>
               <div className="relative z-10 text-center flex flex-col h-full justify-center">
-                <h4 className="text-[11px] font-black text-amber-900 uppercase tracking-widest mb-1 leading-tight">Hoàn thành, một phần</h4>
+                <h4 className="text-[11px] font-black text-amber-900 uppercase tracking-widest mb-1 leading-tight">Hoàn thành</h4>
                 <div className="h-px bg-amber-200/50 w-full my-2"></div>
                 <div className="flex flex-col items-center gap-3">
                   <div className="flex items-baseline gap-2">
@@ -428,30 +428,47 @@ export default function DashboardView({
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={statsCategory === 'stage' ? [
-                          { name: 'Hoàn thành', value: stats.completed.projects, color: '#10b981' },
-                          { name: 'Đã công bố', value: stats.announced.projects, color: '#059669' },
-                          { name: 'Đã cấp phép', value: stats.licensed.projects, color: '#ea580c' },
-                          { name: 'Chấp thuận CT', value: stats.approved.projects, color: '#2563eb' },
-                          { name: 'Đang chuẩn bị', value: stats.preparing.projects, color: '#64748b' }
-                        ].filter(d => d.value > 0) : Object.entries(statsGroups.byGroup).map(([name, list], index) => ({
-                          name,
-                          value: list.length,
-                          color: index === 0 ? '#10b981' : index === 1 ? '#ea580c' : index === 2 ? '#2563eb' : '#64748b'
-                        }))}
+                        data={(() => {
+                          if (statsCategory === 'stage') {
+                            const data = [
+                              { name: 'Hoàn thành', value: stats.completed.projects, color: '#10b981' },
+                              { name: 'Đã công bố', value: stats.announced.projects, color: '#059669' },
+                              { name: 'Đã cấp phép', value: stats.licensed.projects, color: '#ea580c' },
+                              { name: 'Chấp thuận CT', value: stats.approved.projects, color: '#2563eb' },
+                              { name: 'Đang chuẩn bị', value: stats.preparing.projects, color: '#64748b' }
+                            ].filter(d => d.value > 0);
+                            return data;
+                          } else {
+                            return Object.entries(statsGroups.byGroup).map(([name, list], index) => ({
+                              name,
+                              value: list.length,
+                              color: index === 0 ? '#10b981' : index === 1 ? '#ea580c' : index === 2 ? '#2563eb' : '#64748b'
+                            }));
+                          }
+                        })()}
                         innerRadius={70}
                         outerRadius={100}
                         paddingAngle={4}
                         dataKey="value"
                         stroke="none"
                       >
-                        {(statsCategory === 'stage' ? [
-                          '#10b981', '#059669', '#ea580c', '#2563eb', '#64748b'
-                        ] : Object.entries(statsGroups.byGroup).map((_, index) => 
-                          index === 0 ? '#10b981' : index === 1 ? '#ea580c' : index === 2 ? '#2563eb' : '#64748b'
-                        )).map((color, index) => (
-                          <Cell key={`cell-${index}`} fill={color} />
-                        ))}
+                        {(() => {
+                          const data = statsCategory === 'stage' ? [
+                            { name: 'Hoàn thành', value: stats.completed.projects, color: '#10b981' },
+                            { name: 'Đã công bố', value: stats.announced.projects, color: '#059669' },
+                            { name: 'Đã cấp phép', value: stats.licensed.projects, color: '#ea580c' },
+                            { name: 'Chấp thuận CT', value: stats.approved.projects, color: '#2563eb' },
+                            { name: 'Đang chuẩn bị', value: stats.preparing.projects, color: '#64748b' }
+                          ].filter(d => d.value > 0) : Object.entries(statsGroups.byGroup).map(([name, list], index) => ({
+                            name,
+                            value: list.length,
+                            color: index === 0 ? '#10b981' : index === 1 ? '#ea580c' : index === 2 ? '#2563eb' : '#64748b'
+                          }));
+                          
+                          return data.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ));
+                        })()}
                       </Pie>
                       <Tooltip 
                         contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}

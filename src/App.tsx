@@ -222,8 +222,18 @@ export default function App() {
     }
   };
 
+  const handleLogout = () => {
+    setCurrentUser(null);
+    setActiveTab('dashboard'); // Optional: reset to default
+  };
+
+  const handleLogin = (user: UserAccount) => {
+    setCurrentUser(user);
+    setActiveTab('dashboard-app');
+  };
+
   if (!currentUser) {
-    return <Login onLogin={setCurrentUser} />;
+    return <Login onLogin={handleLogin} />;
   }
 
   return (
@@ -235,7 +245,7 @@ export default function App() {
           activeTab={activeTab === 'sidebar-open' ? 'dashboard' : activeTab} 
           onNavigate={(tab) => { setActiveTab(tab); }} 
           currentUser={currentUser}
-          onLogout={() => setCurrentUser(null)}
+          onLogout={handleLogout}
         />
       </div>
       
@@ -282,7 +292,7 @@ export default function App() {
             </div>
             <div className="h-8 w-[1px] bg-slate-200 mx-1"></div>
             <button 
-              onClick={() => setCurrentUser(null)}
+              onClick={handleLogout}
               className="p-2 hover:bg-rose-50 rounded-lg text-slate-500 hover:text-rose-600 transition-colors group relative"
               title="Thoát"
             >
@@ -378,6 +388,7 @@ export default function App() {
             <ProjectGanttDetail 
               project={selectedGanttProject}
               onBack={() => setActiveTab(ganttBackTab)}
+              currentUser={currentUser}
             />
           )}
           {activeTab === 'process-gantt' && <ProcessGanttView projects={visibleProjects} />}

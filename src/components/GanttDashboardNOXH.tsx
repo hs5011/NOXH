@@ -525,11 +525,11 @@ export default function GanttDashboardNOXH({ projects: initialProjects = [], rep
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-lg bg-blue-600" />
-            <span>TT Đúng hạn</span>
+            <span>Đúng hạn</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-lg bg-rose-500" />
-            <span>TT Quá hạn</span>
+            <span>Quá hạn</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-lg bg-slate-200" />

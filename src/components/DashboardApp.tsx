@@ -107,20 +107,20 @@ interface DashboardAppProps {
 }
 
 const PHASES = [
-  { id: 'chutruong', name: 'CHỦ TRƯƠNG ĐẦU TƯ', cdtKey: 'chutruong_cdt_date', nnKey: 'chutruong_nn_date', agency: 'sxd', borderColor: 'border-blue-100', color: 'bg-blue-50', textColor: 'text-blue-700' },
-  { id: 'qh1500', name: 'QH 1/500', cdtKey: 'qh1500_cdt_date', nnKey: 'qh1500_nn_date', agency: 'sqhkt', borderColor: 'border-emerald-100', color: 'bg-emerald-50', textColor: 'text-emerald-700' },
-  { id: 'giaodat', name: 'QĐ GIAO ĐẤT', cdtKey: 'qdgiaodat_cdt_date', nnKey: 'qdgiaodat_nn_date', agency: 'sxd', borderColor: 'border-purple-100', color: 'bg-purple-50', textColor: 'text-purple-700' },
-  { id: 'htkt', name: 'ĐẤU NỐI HTKT/ĐTM', cdtKey: 'htkt_dtm_cdt_date', nnKey: 'htkt_dtm_nn_date', agency: 'ubnd_xa', borderColor: 'border-orange-100', color: 'bg-orange-50', textColor: 'text-orange-700' },
-  { id: 'bcnckt', name: 'BC NCKT', cdtKey: 'baocaonckt_cdt_date', nnKey: 'baocaonckt_nn_date', agency: 'sxd', borderColor: 'border-indigo-100', color: 'bg-indigo-50', textColor: 'text-indigo-700' },
-  { id: 'pccc', name: 'THẨM DUYỆT PCCC', cdtKey: 'pccc_cdt_date', nnKey: 'pccc_nn_date', agency: 'pccc_agency', borderColor: 'border-rose-100', color: 'bg-rose-50', textColor: 'text-rose-700' },
-  { id: 'gpxd', name: 'GPXD', cdtKey: 'gpxaydung_cdt_date', nnKey: 'gpxaydung_nn_date', agency: 'sxd', borderColor: 'border-sky-100', color: 'bg-sky-50', textColor: 'text-sky-700' },
+  { id: 'chutruong', name: 'CHỦ TRƯƠNG ĐẦU TƯ', cdtKey: 'chutruong_cdt_date', nnKey: 'chutruong_nn_date', agency: '1', borderColor: 'border-blue-100', color: 'bg-blue-50', textColor: 'text-blue-700' },
+  { id: 'qh1500', name: 'QH 1/500', cdtKey: 'qh1500_cdt_date', nnKey: 'qh1500_nn_date', agency: '2', borderColor: 'border-emerald-100', color: 'bg-emerald-50', textColor: 'text-emerald-700' },
+  { id: 'giaodat', name: 'QĐ GIAO ĐẤT', cdtKey: 'qdgiaodat_cdt_date', nnKey: 'qdgiaodat_nn_date', agency: '6', borderColor: 'border-purple-100', color: 'bg-purple-50', textColor: 'text-purple-700' },
+  { id: 'htkt', name: 'ĐẤU NỐI HTKT/ĐTM', cdtKey: 'htkt_dtm_cdt_date', nnKey: 'htkt_dtm_nn_date', agency: '1', borderColor: 'border-orange-100', color: 'bg-orange-50', textColor: 'text-orange-700' },
+  { id: 'bcnckt', name: 'BC NCKT', cdtKey: 'baocaonckt_cdt_date', nnKey: 'baocaonckt_nn_date', agency: '1', borderColor: 'border-indigo-100', color: 'bg-indigo-50', textColor: 'text-indigo-700' },
+  { id: 'pccc', name: 'THẨM DUYỆT PCCC', cdtKey: 'pccc_cdt_date', nnKey: 'pccc_nn_date', agency: '9', borderColor: 'border-rose-100', color: 'bg-rose-50', textColor: 'text-rose-700' },
+  { id: 'gpxd', name: 'GPXD', cdtKey: 'gpxaydung_cdt_date', nnKey: 'gpxaydung_nn_date', agency: '1', borderColor: 'border-sky-100', color: 'bg-sky-50', textColor: 'text-sky-700' },
 ];
 
 const AGENCIES = [
-  { id: 'sxd', name: 'Sở Xây dựng' },
-  { id: 'sqhkt', name: 'Sở Quy hoạch Kiến trúc' },
-  { id: 'ubnd_xa', name: 'UBND cấp xã, phường' },
-  { id: 'pccc_agency', name: 'Công an TP (PCCC)' },
+  { id: '1', name: 'Sở Xây dựng' },
+  { id: '2', name: 'Sở Quy hoạch Kiến trúc' },
+  { id: '6', name: 'UBND cấp xã, phường' },
+  { id: '9', name: 'Công an TP (PCCC)' },
 ];
 
 export default function DashboardApp(props: DashboardAppProps) {
@@ -2012,11 +2012,11 @@ function DashboardContent({
                  </div>
                  <div className="flex items-center gap-2 text-slate-600">
                    <div className="w-3.5 h-3.5 bg-blue-600 rounded-lg" />
-                   <span>TT Đúng hạn</span>
+                   <span>Đúng hạn</span>
                  </div>
                  <div className="flex items-center gap-2 text-slate-600">
                    <div className="w-3.5 h-3.5 bg-rose-500 rounded-lg" />
-                   <span>TT Quá hạn</span>
+                   <span>Quá hạn</span>
                  </div>
                  <div className="flex items-center gap-2 text-slate-600">
                    <div className="w-3.5 h-3.5 bg-slate-200 rounded-lg" />
@@ -2162,13 +2162,18 @@ function DashboardContent({
                           return actualDate > planDate ? 'bg-rose-600' : 'bg-blue-600';
                         };
 
+                        const isInvestor = currentUser?.userType === 'investor';
+                        const isAdminUser = currentUser?.roleId === 'Admin';
+                        const isSXD = currentUser?.agencyId === '1';
+                        const canEditCdt = isInvestor || isAdminUser || isSXD;
+
                         return (
                           <td key={phase.id} className="border-r border-b border-slate-100 p-1 relative bg-[#F8FAFC]">
                             {hasActual ? (
                                <div onClick={() => handleOpenModal(phase)} className={`absolute inset-y-1.5 left-1.5 right-1.5 rounded-md flex items-center justify-center text-[9px] font-black text-white cursor-pointer shadow-sm ${getCdtStatusColor()}`}>
                                  {formatDateForDisplay(actual.cdtDate)}
                                </div>
-                            ) : hasPlan ? (
+                            ) : hasPlan && canEditCdt ? (
                                <button onClick={() => handleOpenModal(phase)} className="absolute inset-x-2 inset-y-2 border border-dashed border-blue-300 bg-blue-50/50 rounded-md text-blue-500 text-[8px] font-bold hover:bg-blue-100 transition-colors uppercase">
                                  + nhập TT
                                </button>
@@ -2234,13 +2239,18 @@ function DashboardContent({
                           const planNnStr = (selectedProject as any)[phase.nnKey];
                           const hasPlan = planNnStr && planNnStr !== 'X';
 
+                          const isAgencyUser = currentUser?.userType === 'agency';
+                          const isAdminUser = currentUser?.roleId === 'Admin';
+                          const isSXD = currentUser?.agencyId === '1';
+                          const canEditAgency = isAdminUser || isSXD || (isAgencyUser && String(currentUser?.agencyId) === String(agency.id));
+
                           return (
                             <td key={phase.id} className="border-r border-b border-slate-100 p-1 relative bg-[#F8FAFC]">
                               {isOwnerAgency && hasActual ? (
                                 <div onClick={() => handleOpenModal(phase)} className={`absolute inset-y-1.5 left-1.5 right-1.5 rounded-md flex items-center justify-center text-[9px] font-black text-white cursor-pointer shadow-sm ${getStatusColor(phase, actual)}`}>
                                   {formatDateForDisplay(actual.nnDate)}
                                 </div>
-                              ) : isOwnerAgency && hasPlan ? (
+                              ) : isOwnerAgency && hasPlan && canEditAgency ? (
                                 <button onClick={() => handleOpenModal(phase)} className="absolute inset-x-2 inset-y-2 border border-dashed border-blue-300 bg-blue-50/50 rounded-md text-blue-500 text-[8px] font-bold hover:bg-blue-100 transition-colors uppercase">
                                   + nhập TT
                                 </button>

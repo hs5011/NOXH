@@ -9,6 +9,7 @@ import { parseDate, formatDate } from '../lib/projectUtils';
 interface ProjectGanttDetailProps {
   project: any;
   onBack: () => void;
+  currentUser?: any;
 }
 
 interface ActualProgress {
@@ -17,20 +18,20 @@ interface ActualProgress {
 }
 
 const PHASES = [
-  { id: 'chutruong', name: 'CHỦ TRƯƠNG ĐẦU TƯ', color: 'bg-[#E3F2FD]', textColor: 'text-blue-700', borderColor: 'border-blue-200', cdtKey: 'chutruong_cdt_date', nnKey: 'chutruong_nn_date', agency: 'sxd' },
-  { id: 'qh1500', name: 'QH 1/500', color: 'bg-[#F3E5F5]', textColor: 'text-purple-700', borderColor: 'border-purple-200', cdtKey: 'qh1500_cdt_date', nnKey: 'qh1500_nn_date', agency: 'sqhkt' },
-  { id: 'giaodat', name: 'QĐ GIAO ĐẤT', color: 'bg-[#E8F5E9]', textColor: 'text-emerald-700', borderColor: 'border-emerald-200', cdtKey: 'qdgiaodat_cdt_date', nnKey: 'qdgiaodat_nn_date', agency: 'ubnd_xa' },
-  { id: 'htkt', name: 'ĐẤU NỐI HTKT/ĐTM', color: 'bg-[#FFFDE7]', textColor: 'text-amber-700', borderColor: 'border-amber-200', cdtKey: 'htkt_dtm_cdt_date', nnKey: 'htkt_dtm_nn_date', agency: 'sxd' },
-  { id: 'bcnckt', name: 'BC NCKT', color: 'bg-[#FBE9E7]', textColor: 'text-rose-700', borderColor: 'border-rose-200', cdtKey: 'baocaonckt_cdt_date', nnKey: 'baocaonckt_nn_date', agency: 'sxd' },
-  { id: 'pccc', name: 'THẨM DUYỆT PCCC', color: 'bg-[#FCE4EC]', textColor: 'text-pink-700', borderColor: 'border-pink-200', cdtKey: 'pccc_cdt_date', nnKey: 'pccc_nn_date', agency: 'pccc_agency' },
-  { id: 'gpxd', name: 'GPXD', color: 'bg-[#E0F7FA]', textColor: 'text-cyan-700', borderColor: 'border-cyan-200', cdtKey: 'gpxaydung_cdt_date', nnKey: 'gpxaydung_nn_date', agency: 'sxd' },
+  { id: 'chutruong', name: 'CHỦ TRƯƠNG ĐẦU TƯ', color: 'bg-[#E3F2FD]', textColor: 'text-blue-700', borderColor: 'border-blue-200', cdtKey: 'chutruong_cdt_date', nnKey: 'chutruong_nn_date', agency: '1' },
+  { id: 'qh1500', name: 'QH 1/500', color: 'bg-[#F3E5F5]', textColor: 'text-purple-700', borderColor: 'border-purple-200', cdtKey: 'qh1500_cdt_date', nnKey: 'qh1500_nn_date', agency: '2' },
+  { id: 'giaodat', name: 'QĐ GIAO ĐẤT', color: 'bg-[#E8F5E9]', textColor: 'text-emerald-700', borderColor: 'border-emerald-200', cdtKey: 'qdgiaodat_cdt_date', nnKey: 'qdgiaodat_nn_date', agency: '6' },
+  { id: 'htkt', name: 'ĐẤU NỐI HTKT/ĐTM', color: 'bg-[#FFFDE7]', textColor: 'text-amber-700', borderColor: 'border-amber-200', cdtKey: 'htkt_dtm_cdt_date', nnKey: 'htkt_dtm_nn_date', agency: '1' },
+  { id: 'bcnckt', name: 'BC NCKT', color: 'bg-[#FBE9E7]', textColor: 'text-rose-700', borderColor: 'border-rose-200', cdtKey: 'baocaonckt_cdt_date', nnKey: 'baocaonckt_nn_date', agency: '1' },
+  { id: 'pccc', name: 'THẨM DUYỆT PCCC', color: 'bg-[#FCE4EC]', textColor: 'text-pink-700', borderColor: 'border-pink-200', cdtKey: 'pccc_cdt_date', nnKey: 'pccc_nn_date', agency: '9' },
+  { id: 'gpxd', name: 'GPXD', color: 'bg-[#E0F7FA]', textColor: 'text-cyan-700', borderColor: 'border-cyan-200', cdtKey: 'gpxaydung_cdt_date', nnKey: 'gpxaydung_nn_date', agency: '1' },
 ];
 
 const AGENCIES = [
-  { id: 'sxd', name: 'Sở Xây dựng' },
-  { id: 'sqhkt', name: 'Sở Quy hoạch Kiến trúc' },
-  { id: 'ubnd_xa', name: 'UBND cấp xã, phường' },
-  { id: 'pccc_agency', name: 'Công an TP (PCCC)' },
+  { id: '1', name: 'Sở Xây dựng' },
+  { id: '2', name: 'Sở Quy hoạch Kiến trúc' },
+  { id: '6', name: 'UBND cấp xã, phường' },
+  { id: '9', name: 'Công an TP (PCCC)' },
 ];
 
 const formatDateForDisplay = (dateStr: string) => {
@@ -61,7 +62,7 @@ const calculateDays = (d1: string | Date | null, d2: string | Date | null) => {
   return `${diffDays}n`;
 };
 
-export default function ProjectGanttDetail({ project, onBack }: ProjectGanttDetailProps) {
+export default function ProjectGanttDetail({ project, onBack, currentUser }: ProjectGanttDetailProps) {
   const [actualProgressMap, setActualProgressMap] = useState<Record<string, ActualProgress>>(() => {
     const saved = localStorage.getItem(`actual_progress_${project.id}`);
     const savedData = saved ? JSON.parse(saved) : {};
@@ -246,11 +247,11 @@ export default function ProjectGanttDetail({ project, onBack }: ProjectGanttDeta
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-lg bg-blue-600" />
-              <span>TT Đúng hạn</span>
+              <span>Đúng hạn</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-lg bg-rose-500" />
-              <span>TT Quá hạn</span>
+              <span>Quá hạn</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded-lg bg-slate-200" />
@@ -337,9 +338,14 @@ export default function ProjectGanttDetail({ project, onBack }: ProjectGanttDeta
 
                     const dateDisplay = formatDateForDisplay(actual?.cdtDate || '');
 
+                    const isInvestor = currentUser?.userType === 'investor';
+                    const isAdmin = currentUser?.roleId === 'Admin';
+                    const isSXD = currentUser?.agencyId === '1';
+                    const canEditCdt = isInvestor || isAdmin || isSXD;
+
                     return (
                       <td key={phase.id} className="border-r border-b border-slate-100 p-1 relative bg-[#F8FAFC] h-12">
-                        {hasPlan && !hasActual && !isPlanDone && (
+                        {hasPlan && !hasActual && !isPlanDone && canEditCdt && (
                           <button 
                             onClick={() => handleOpenModal(phase)}
                             className="absolute inset-x-1 inset-y-3 border border-dashed border-blue-300 bg-blue-50/50 rounded-lg text-blue-500 text-[8px] font-bold hover:bg-blue-100 transition-colors uppercase leading-none"
@@ -411,9 +417,14 @@ export default function ProjectGanttDetail({ project, onBack }: ProjectGanttDeta
                       const actual = actualProgressMap[phase.id];
                       const hasActualData = actual && (actual.nnDate && actual.nnDate !== '');
 
+                      const isAgencyUser = currentUser?.userType === 'agency';
+                      const isAdmin = currentUser?.roleId === 'Admin';
+                      const isSXD = currentUser?.agencyId === '1';
+                      const canEditAgency = isAdmin || isSXD || (isAgencyUser && String(currentUser?.agencyId) === String(agency.id));
+
                       return (
                         <td key={phase.id} className="border-r border-b border-slate-100 p-1 relative bg-[#F8FAFC] h-12">
-                          {isOwnerAgency && hasPlan && !hasActualData && !isPlanDone && (
+                         {isOwnerAgency && hasPlan && !hasActualData && !isPlanDone && canEditAgency && (
                             <button 
                               onClick={() => handleOpenModal(phase)}
                               className="absolute inset-x-1 inset-y-3 border border-dashed border-blue-300 bg-blue-50/50 rounded-lg text-blue-500 text-[8px] font-bold hover:bg-blue-100 transition-colors uppercase leading-none"
