@@ -2907,19 +2907,19 @@ export const INITIAL_USERS: UserAccount[] = [
   },
   {
     id: 'u3',
-    fullName: 'Lãnh đạo Sở Tài chính',
+    fullName: 'Lãnh đạo Sở NNMT',
     phone: '0903333333',
-    email: 'stc@example.com',
-    username: 'stc',
+    email: 'snnmt@example.com',
+    username: 'snnmt',
     password: '123456',
     userType: 'agency',
-    agencyId: '5', // Sở Tài chính
+    agencyId: '3', // Sở NNMT
     department: '',
     roleId: 'Lãnh đạo'
   },
   {
     id: 'u4',
-    fullName: 'Lãnh đạo Chủ đầu tư',
+    fullName: 'Chủ đầu tư',
     phone: '0904444444',
     email: 'cdt@example.com',
     username: 'cdt',
@@ -2939,5 +2939,17 @@ export const INITIAL_USERS: UserAccount[] = [
     agencyId: '1', // Sở Xây dựng
     department: 'Phòng PTĐT',
     roleId: 'Chuyên viên'
+  },
+  {
+    id: 'u6',
+    fullName: 'Lãnh đạo Sở Quy hoạch Kiến trúc',
+    phone: '0905555555',
+    email: 'sqhkt@example.com',
+    username: 'sqhkt',
+    password: '123456',
+    userType: 'agency',
+    agencyId: '2', // Sở Quy hoạch Kiến trúc
+    department: 'Phòng PTĐT',
+    roleId: 'Lãnh đạo'
   }
 ];

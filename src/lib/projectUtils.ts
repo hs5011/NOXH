@@ -50,6 +50,20 @@ export interface ProjectStatus {
   parentStep: string;
 }
 
+export const getStepAgency = (project: any, processes: any[]): string => {
+  if (!project.currentStep) return "Chưa xác định";
+  const process = processes.find(p => p.id === project.processId) || processes[0];
+  if (!process) return "Chưa xác định";
+  for (const ps of process.parentSteps) {
+    for (const cs of ps.childSteps) {
+      if (cs.name === project.currentStep) {
+        return cs.agency;
+      }
+    }
+  }
+  return "Chưa xác định";
+};
+
 export const calculateProjectStatus = (milestones: any, processId: string, processes: Process[], implementationPlan: any = {}): ProjectStatus => {
   const selectedProcess = processes.find(p => p.id === processId);
   if (!selectedProcess) return { progress: 0, currentStep: 'Chưa chọn quy trình', status: 'On Track', currentAgency: '', childStep: '', parentStep: '' };

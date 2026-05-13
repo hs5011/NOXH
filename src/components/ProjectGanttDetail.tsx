@@ -400,7 +400,7 @@ export default function ProjectGanttDetail({ project, onBack }: ProjectGanttDeta
                   {/* Thực tế Row */}
                   <tr className="group h-12">
                     <td className="sticky left-[120px] z-30 bg-[#F8FAFC] px-1 py-2 border-r border-b border-slate-200 text-center shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
-                      <span className="px-1.5 py-0.5 bg-blue-600 text-white text-[8px] font-black rounded-md uppercase">TD</span>
+                      <span className="px-1.5 py-0.5 bg-blue-600 text-white text-[8px] font-black rounded-md uppercase">TT</span>
                     </td>
                     {PHASES.map((phase) => {
                       const startDateStr = project[phase.cdtKey];

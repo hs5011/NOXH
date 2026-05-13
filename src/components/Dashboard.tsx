@@ -9,6 +9,8 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pi
 import { PROJECT_REGIONS } from '../constants';
 import { INITIAL_PROCESSES } from '../data/appData';
 
+import { getStepAgency } from '../lib/projectUtils';
+
 export default function DashboardView({ 
   projects: initialProjects = [], 
   onNavigateToProjects, 
@@ -16,7 +18,8 @@ export default function DashboardView({
   processingAgencies = [], 
   projectStages = [], 
   currentUser,
-  onSeeProjects 
+  onSeeProjects,
+  processes = []
 }: any) {
   const [projects, setProjects] = useState<any[]>(initialProjects);
   const [searchTerm, setSearchTerm] = useState('');
@@ -94,7 +97,7 @@ export default function DashboardView({
 
   const dynamicAgencies = [
     ...[...processingAgencies].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)).map(a => {
-      const agencyProjects = globalFilteredProjects.filter(p => p.currentAgency === a.name);
+      const agencyProjects = globalFilteredProjects.filter(p => getStepAgency(p, processes || INITIAL_PROCESSES) === a.name);
       return {
         ...a,
         count: agencyProjects.length,
@@ -108,8 +111,8 @@ export default function DashboardView({
       {
         id: 'investor-stat',
         name: 'Chủ đầu tư',
-        count: globalFilteredProjects.filter(p => p.currentAgency === 'Chủ đầu tư').length,
-        delayedCount: globalFilteredProjects.filter(p => p.currentAgency === 'Chủ đầu tư' && (p.status === 'Delayed' || p.status === 'Warning')).length,
+        count: globalFilteredProjects.filter(p => getStepAgency(p, processes || INITIAL_PROCESSES) === 'Chủ đầu tư').length,
+        delayedCount: globalFilteredProjects.filter(p => getStepAgency(p, processes || INITIAL_PROCESSES) === 'Chủ đầu tư' && (p.status === 'Delayed' || p.status === 'Warning')).length,
         subtext: 'dự án đang xử lý',
         color: 'bg-emerald-50',
         iconColor: 'text-emerald-500'
@@ -119,7 +122,7 @@ export default function DashboardView({
 
   const agencyData = processingAgencies.map((agency: any) => ({
     name: agency.name,
-    value: projects.filter(p => p.currentAgency === agency.name).length
+    value: projects.filter(p => getStepAgency(p, processes || INITIAL_PROCESSES) === agency.name).length
   })).filter((d: any) => d.value > 0).sort((a: any, b: any) => b.value - a.value);
 
   const regionData = PROJECT_REGIONS.map(region => ({
@@ -501,139 +504,8 @@ export default function DashboardView({
             </div>
           </div>
 
-          {/* Bottom Grid: Original Dashboard stats */}
-          <div className="space-y-6 sm:space-y-8 pt-8 border-t border-slate-200">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <h2 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight uppercase">THỐNG KÊ CHI TIẾT THEO CƠ QUAN</h2>
-            </div>
-
-            {/* Search Box */}
-            <div className="relative z-30">
-              <div className="relative">
-                <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm nhanh dự án (Tên dự án, mã dự án)..."
-                  className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20 transition-all shadow-sm"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                {searchTerm && (
-                  <button 
-                    onClick={() => setSearchTerm('')}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-100 rounded-full text-slate-400"
-                  >
-                    <X size={16} />
-                  </button>
-                )}
-              </div>
-
-              {/* Search Results Dropdown */}
-              {searchTerm && globalFilteredProjects.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 max-h-96 overflow-y-auto overflow-x-hidden">
-                  <div className="p-2 border-b border-slate-50 bg-slate-50/50">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3">Kết quả tìm thấy ({globalFilteredProjects.length})</p>
-                  </div>
-                  {globalFilteredProjects.map((p) => (
-                    <div 
-                      key={p.id}
-                      onClick={() => onProjectClick(p)}
-                      className="p-4 hover:bg-blue-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors flex items-center justify-between group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-white group-hover:text-blue-600 group-hover:shadow-sm transition-all">
-                          <Building size={20} />
-                        </div>
-                        <div>
-                          <p className="text-sm font-black text-slate-800 line-clamp-1 group-hover:text-blue-700">{p.name}</p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase">{p.code}</span>
-                            <span className="w-1 h-1 bg-slate-300 rounded-full"></span>
-                            <span className="text-[10px] font-bold text-blue-600 uppercase italic">{p.stage}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <ExternalLink size={16} className="text-slate-300 group-hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-all" />
-                    </div>
-                  ))}
-                </div>
-              )}
-              {searchTerm && globalFilteredProjects.length === 0 && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 p-8 text-center">
-                  <Search size={32} className="mx-auto text-slate-200 mb-2" />
-                  <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Không tìm thấy dự án nào</p>
-                </div>
-              )}
-            </div>
-
-            {/* Agency Grid */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-black text-slate-800 tracking-tight">Cơ quan đang xử lý</h2>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {dynamicAgencies
-                  .filter(agency => {
-                    if (statusFilter === 'delayed') return agency.delayedCount > 0;
-                    if (statusFilter === 'ontime') return (agency.count - agency.delayedCount) > 0;
-                    return agency.count > 0;
-                  })
-                  .map((agency) => {
-                    const delayedCount = agency.delayedCount;
-                    const onTimeCount = agency.count - delayedCount;
-                    
-                    let displayCount = agency.count;
-                    if (statusFilter === 'delayed') displayCount = delayedCount;
-                    if (statusFilter === 'ontime') displayCount = onTimeCount;
-
-                    return (
-                      <motion.div
-                        key={agency.id}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                          const filter: any = { agencyName: agency.name };
-                          if (statusFilter === 'delayed') filter.status = 'Delayed';
-                          if (statusFilter === 'ontime') filter.status = 'On Track';
-                          onNavigateToProjects(filter);
-                        }}
-                        className={`${agency.color} p-4 rounded-2xl flex flex-col justify-between border border-white shadow-sm hover:shadow-md transition-all relative overflow-hidden h-28 cursor-pointer group`}
-                      >
-                        <div className="relative z-10 flex justify-between items-start gap-3">
-                          <p className="text-sm font-bold text-slate-800 leading-tight line-clamp-2 flex-1 group-hover:text-blue-700 transition-colors" title={agency.name}>{agency.name}</p>
-                          <span className={`text-2xl font-black ${agency.iconColor} tracking-tighter leading-none`}>{displayCount}</span>
-                        </div>
-                        
-                        <div className="relative z-10 flex justify-between items-end mt-2">
-                          <div className="flex flex-col items-start">
-                            <span className="text-xs font-bold text-rose-500 uppercase">Trễ:</span>
-                            <span className="text-lg font-black text-rose-600 leading-none">{delayedCount > 0 ? delayedCount : '0'}</span>
-                          </div>
-                          <div className="flex flex-col items-end">
-                            <span className="text-xs font-bold text-emerald-500 uppercase">Hạn:</span>
-                            <span className="text-lg font-black text-emerald-600 leading-none">{onTimeCount > 0 ? onTimeCount : '0'}</span>
-                          </div>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-              </div>
-            </div>
-
-            {/* Region & Process Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-12">
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <h3 className="font-bold text-lg text-slate-900 mb-4 uppercase tracking-tight">Thống kê theo cơ quan (Biểu đồ)</h3>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={agencyData} layout="vertical">
-                      <XAxis type="number" />
-                      <YAxis dataKey="name" type="category" width={100} tick={{fontSize: 10}} />
-                      <Tooltip />
-                      <Bar dataKey="value" fill="#3b82f6" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
+          {/* Region Charts */}
+            <div className="grid grid-cols-1 gap-6 pb-12">
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                 <h3 className="font-bold text-lg text-slate-900 mb-4 uppercase tracking-tight">Thống kê theo khu vực</h3>
                 <div className="h-[300px]">
@@ -648,7 +520,6 @@ export default function DashboardView({
                 </div>
               </div>
             </div>
-          </div>
         </div>
       </div>
     </div>

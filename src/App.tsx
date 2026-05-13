@@ -92,22 +92,58 @@ export default function App() {
   const [tphcmListProjects, setTphcmListProjects] = useState<any[]>([]);
   const [ganttBackTab, setGanttBackTab] = useState('gantt-dashboard-noxh');
 
+  const stepToAgencyMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    processes.forEach(process => {
+      process.parentSteps.forEach(ps => {
+        ps.childSteps.forEach(cs => {
+          map[cs.name] = cs.agency;
+        });
+      });
+    });
+    return map;
+  }, [processes]);
+
   const visibleProjects = useMemo(() => {
     if (!currentUser) return [];
     if (currentUser.roleId === 'Admin') return projects;
-    if (currentUser.userType === 'agency' && currentUser.agencyId === '1') return projects; // Sở Xây dựng
     
+    // Determine user's identity name
+    let userAgencyName = '';
     if (currentUser.userType === 'agency') {
       const agency = processingAgencies.find(a => a.id === currentUser.agencyId);
-      return projects.filter(p => p.currentAgency === agency?.name);
+      userAgencyName = agency?.name || '';
+    } else if (currentUser.userType === 'investor') {
+      userAgencyName = 'Chủ đầu tư';
     }
+
+    // Lead agency (Sở Xây dựng) might see all, but let's check user requirement
+    // Requirement: "nếu bước hiện tại là thuộc sở nào hay cdt nào thì hiện dự án tương ứng"
+    // We strictly filter by current step's agency matching user's agency name
     
-    if (currentUser.userType === 'investor') {
-      return projects.filter(p => p.investor === currentUser.investorId);
-    }
-    
-    return [];
-  }, [projects, currentUser, processingAgencies]);
+    return projects.filter(p => {
+      const stepAgency = stepToAgencyMap[p.currentStep];
+      
+      // Admin hoặc Sở Xây dựng (ID '1') xem được tất cả dự án
+      if (currentUser.roleId === 'Admin' || (currentUser.userType === 'agency' && currentUser.agencyId === '1')) {
+        return true;
+      }
+
+      // Đối với các cơ quan NN khác, chỉ thấy dự án đang ở bước của mình
+      if (currentUser.userType === 'agency') {
+        const agency = processingAgencies.find(a => a.id === currentUser.agencyId);
+        const userAgencyName = agency?.name || '';
+        return stepAgency === userAgencyName;
+      }
+      
+      // Đối với Chủ đầu tư, thấy dự án của mình
+      if (currentUser.userType === 'investor') {
+        return p.investor === currentUser.investorId;
+      }
+      
+      return false;
+    });
+  }, [projects, currentUser, processingAgencies, stepToAgencyMap]);
 
   const visibleAgencies = useMemo(() => {
     if (!currentUser) return [];

@@ -122,18 +122,23 @@ export default function Login({ onLogin }: LoginProps) {
                 <p>Pass: 123456</p>
               </div>
               <div className="bg-slate-50 p-3 rounded border border-slate-200">
-                <p className="font-medium text-slate-900">Lãnh đạo STC</p>
-                <p>User: stc</p>
+                <p className="font-medium text-slate-900">Lãnh đạo SNNMT</p>
+                <p>User: snnmt</p>
                 <p>Pass: 123456</p>
               </div>
               <div className="bg-slate-50 p-3 rounded border border-slate-200">
-                <p className="font-medium text-slate-900">Lãnh đạo CĐT</p>
+                <p className="font-medium text-slate-900">Chủ Đầu tư (Công ty TNHH Thương mại – Xây dựng Lê Thành)</p>
                 <p>User: cdt</p>
                 <p>Pass: 123456</p>
               </div>
-              <div className="bg-slate-50 p-3 rounded border border-slate-200 col-span-2">
+              <div className="bg-slate-50 p-3 rounded border border-slate-200">
                 <p className="font-medium text-slate-900">Chuyên viên SXD</p>
                 <p>User: sxd_cv</p>
+                <p>Pass: 123456</p>
+              </div>
+              <div className="bg-slate-50 p-3 rounded border border-slate-200">
+                <p className="font-medium text-slate-900">Lãnh đạo SQHKT</p>
+                <p>User: sqhkt</p>
                 <p>Pass: 123456</p>
               </div>
             </div>

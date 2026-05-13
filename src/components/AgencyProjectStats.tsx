@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { INITIAL_PROCESSES } from '../data/appData';
+import { getStepAgency } from '../lib/projectUtils';
 
 interface Project {
   id: string;
@@ -109,7 +110,7 @@ export default function AgencyProjectStats({
 
   const dynamicAgencies = [
     ...[...processingAgencies].sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)).map(a => {
-      const agencyProjects = globalFilteredProjects.filter(p => p.currentAgency === a.name);
+      const agencyProjects = globalFilteredProjects.filter(p => getStepAgency(p, INITIAL_PROCESSES) === a.name);
       const count = agencyProjects.length;
       const delayedCount = agencyProjects.filter(p => p.status === 'Delayed' || p.status === 'Warning').length;
       return {
@@ -125,8 +126,8 @@ export default function AgencyProjectStats({
       {
         id: 'investor-stat',
         name: 'Chủ đầu tư',
-        count: globalFilteredProjects.filter(p => p.currentAgency === 'Chủ đầu tư').length,
-        delayedCount: globalFilteredProjects.filter(p => p.currentAgency === 'Chủ đầu tư' && (p.status === 'Delayed' || p.status === 'Warning')).length,
+        count: globalFilteredProjects.filter(p => getStepAgency(p, INITIAL_PROCESSES) === 'Chủ đầu tư').length,
+        delayedCount: globalFilteredProjects.filter(p => getStepAgency(p, INITIAL_PROCESSES) === 'Chủ đầu tư' && (p.status === 'Delayed' || p.status === 'Warning')).length,
         subtext: 'dự án đang xử lý',
         color: 'bg-emerald-50',
         iconColor: 'text-emerald-500',
@@ -146,7 +147,7 @@ export default function AgencyProjectStats({
   ];
 
   const getDepartmentStats = (agencyName: string, deptName: string) => {
-    const deptProjects = globalFilteredProjects.filter(p => p.currentAgency === agencyName && (p.currentDepartment === deptName || p.location.includes(deptName)));
+    const deptProjects = globalFilteredProjects.filter(p => getStepAgency(p, INITIAL_PROCESSES) === agencyName && (p.currentDepartment === deptName || p.location.includes(deptName)));
     const delayed = deptProjects.filter(p => p.status === 'Delayed' || p.status === 'Warning').length;
     const ontime = deptProjects.length - delayed;
     let count = deptProjects.length;
@@ -293,10 +294,10 @@ export default function AgencyProjectStats({
       if (selectedProcess) return p.processId === selectedProcess;
       if (selectedInvestor) return p.investor === selectedInvestor;
       if (selectedDepartment) {
-        return p.currentAgency === selectedAgency?.name && (p.currentDepartment === selectedDepartment || p.location.includes(selectedDepartment));
+        return getStepAgency(p, INITIAL_PROCESSES) === selectedAgency?.name && (p.currentDepartment === selectedDepartment || p.location.includes(selectedDepartment));
       }
-      if (selectedAgency?.id === 'investor-stat') return p.currentAgency === 'Chủ đầu tư';
-      if (selectedAgency) return p.currentAgency === selectedAgency?.name;
+      if (selectedAgency?.id === 'investor-stat') return getStepAgency(p, INITIAL_PROCESSES) === 'Chủ đầu tư';
+      if (selectedAgency) return getStepAgency(p, INITIAL_PROCESSES) === selectedAgency?.name;
       return true; // If no specific filter is selected, show all (e.g., when clicking summary cards)
     }
     return false;

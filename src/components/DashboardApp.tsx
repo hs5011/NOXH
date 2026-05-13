@@ -24,7 +24,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { PROJECT_REGIONS } from '../constants';
 import { INITIAL_PROCESSES } from '../data/appData';
-import { formatDate, parseDate } from '../lib/projectUtils';
+import { formatDate, parseDate, getStepAgency } from '../lib/projectUtils';
 import { MOCK_PROGRESS_DATA } from '../data/mockData';
 
 // --- Types ---
@@ -299,19 +299,6 @@ function DashboardContent({
     return "deadline"; // fallback
   };
 
-  const getStepAgency = (project: Project) => {
-    if (!project.currentStep) return "Chưa xác định";
-    const process = INITIAL_PROCESSES.find(p => p.id === project.processId) || INITIAL_PROCESSES[0];
-    for (const ps of process.parentSteps) {
-      for (const cs of ps.childSteps) {
-        if (cs.name === project.currentStep) {
-          return cs.agency;
-        }
-      }
-    }
-    return "Chưa xác định";
-  };
-
   const getStepDepartment = (project: Project) => {
     if (!project.currentStep) return "";
     const process = INITIAL_PROCESSES.find(p => p.id === project.processId) || INITIAL_PROCESSES[0];
@@ -361,7 +348,7 @@ function DashboardContent({
   const baseFilteredProjects = useMemo(() => {
     return projects.filter(p => {
       let matches = true;
-      if (filterAgencyName) matches = matches && getStepAgency(p) === filterAgencyName;
+      if (filterAgencyName) matches = matches && getStepAgency(p, INITIAL_PROCESSES) === filterAgencyName;
       if (filterLocation) matches = matches && isProjectInLocation(p.location, filterLocation);
       if (filterInvestor) matches = matches && p.investor === filterInvestor;
       if (filterProjectStage) matches = matches && p.stage === filterProjectStage;
@@ -461,7 +448,7 @@ function DashboardContent({
 
   const dynamicAgencies = [
     ...processingAgencies.map(a => {
-      const agencyProjects = globalFilteredProjects.filter(p => getStepAgency(p) === a.name);
+      const agencyProjects = globalFilteredProjects.filter(p => getStepAgency(p, INITIAL_PROCESSES) === a.name);
       
       const overdueCount = agencyProjects.filter(p => getProjectStatus(p) === 'delayed').length;
       const ontimeCount = agencyProjects.filter(p => getProjectStatus(p) === 'ontime').length;
@@ -481,16 +468,16 @@ function DashboardContent({
       id: 'investor-stat',
       name: 'Chủ đầu tư',
       count: globalFilteredProjects.filter(p => {
-        if (getStepAgency(p) !== 'Chủ đầu tư') return false;
+        if (getStepAgency(p, INITIAL_PROCESSES) !== 'Chủ đầu tư') return false;
         const status = getProjectStatus(p);
         return status === 'delayed' || status === 'ontime';
       }).length,
       delayedCount: globalFilteredProjects.filter(p => {
-        if (getStepAgency(p) !== 'Chủ đầu tư') return false;
+        if (getStepAgency(p, INITIAL_PROCESSES) !== 'Chủ đầu tư') return false;
         return getProjectStatus(p) === 'delayed';
       }).length,
       ontimeCount: globalFilteredProjects.filter(p => {
-        if (getStepAgency(p) !== 'Chủ đầu tư') return false;
+        if (getStepAgency(p, INITIAL_PROCESSES) !== 'Chủ đầu tư') return false;
         return getProjectStatus(p) === 'ontime';
       }).length,
       subtext: 'dự án đang xử lý',
@@ -515,7 +502,7 @@ function DashboardContent({
       }
 
       const deptProjects = globalFilteredProjects.filter(p => {
-        const agencyName = getStepAgency(p);
+        const agencyName = getStepAgency(p, INITIAL_PROCESSES);
         const matchesAgency = agencyName === selectedAgency.name;
         // Check if department matches (for normal agencies) or ward matches (for UBND cấp xã, phường)
         const projectDept = getStepDepartment(p);
@@ -861,21 +848,7 @@ function DashboardContent({
 
         {/* Main Content */}
         <div className="flex-1 -mt-8 bg-white rounded-t-[32px] p-6 shadow-2xl relative z-20 overflow-y-auto pb-24">
-          {/* Search Box */}
-          <div className="mb-4 relative">
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Tìm kiếm dự án..."
-              className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-300"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleSearch((e.target as HTMLInputElement).value);
-                }
-              }}
-            />
-          </div>
-
+          
           {/* Header Summary Statistics - Bento Grid Style */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8 mt-4">
             {/* Main Stats Card - Spans 2 columns on large screens */}
@@ -1074,102 +1047,6 @@ function DashboardContent({
                 </div>
               </div>
             </div>
-          </div>
-
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-black text-slate-800 tracking-tight">Cơ quan đang xử lý</h2>
-          </div>
-
-          <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm mb-6 h-[280px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                layout="vertical"
-                data={(showInvestorStat && currentUser?.userType !== 'investor' ? dynamicAgencies.concat({
-                  id: 'no-investor-stat',
-                  name: 'Chưa có chủ đầu tư',
-                  count: globalFilteredProjects.filter(p => p.investor === 'Chưa có chủ đầu tư' && (getProjectStatus(p) === 'delayed' || getProjectStatus(p) === 'ontime')).length,
-                  delayedCount: globalFilteredProjects.filter(p => p.investor === 'Chưa có chủ đầu tư' && getProjectStatus(p) === 'delayed').length,
-                  ontimeCount: globalFilteredProjects.filter(p => p.investor === 'Chưa có chủ đầu tư' && getProjectStatus(p) === 'ontime').length,
-                  subtext: 'dự án đang xử lý',
-                  color: 'bg-emerald-50',
-                  iconColor: 'text-emerald-500',
-                  departments: [],
-                  displayOrder: 999
-                }) : dynamicAgencies)
-                .filter(a => a.count > 0)
-                .sort((a, b) => b.count - a.count)
-                .map(a => ({
-                  originalName: a.name,
-                  displayName: `${a.name} (${a.count}/${totalProjectsCount})`,
-                  total: a.count,
-                  ontime: a.count - a.delayedCount,
-                  delayed: a.delayedCount,
-                  agency: a
-                }))}
-                margin={{ top: 5, right: 30, left: 120, bottom: 5 }}
-                barGap={1}
-                barCategoryGap="10%"
-              >
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                <XAxis type="number" hide />
-                <YAxis 
-                  dataKey="displayName" 
-                  type="category" 
-                  width={180}
-                  tick={<CustomYAxisTick />}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip 
-                  cursor={{ fill: 'transparent' }}
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const data = payload[0].payload;
-                      return (
-                        <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-xl overflow-hidden">
-                          <p className="text-xs font-black text-slate-800 mb-2">{data.originalName}</p>
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between gap-4">
-                              <span className="text-[10px] font-bold text-slate-500 uppercase">CQNN Đang xử lý</span>
-                              <span className="text-xs font-black text-[#059669]">{data.ontime}</span>
-                            </div>
-                            <div className="flex items-center justify-between gap-4 border-b border-slate-50 pb-1">
-                              <span className="text-[10px] font-bold text-slate-500 uppercase">KH bị chậm tiến độ</span>
-                              <span className="text-xs font-black text-[#e11d48]">{data.delayed}</span>
-                            </div>
-                            <div className="flex items-center justify-between gap-4 pt-1">
-                              <span className="text-[10px] font-bold text-[#1e40af] uppercase">Tổng đang xử lý</span>
-                              <span className="text-xs font-black text-[#1e40af]">{data.total}</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Bar 
-                  dataKey="ontime" 
-                  fill="#059669" 
-                  radius={[0, 4, 4, 0]} 
-                  barSize={18}
-                  onClick={(data: any) => handleAgencyClick(data.agency || data.payload?.agency, 'ontime')}
-                  className="cursor-pointer"
-                >
-                  <LabelList dataKey="ontime" position="right" style={{ fontSize: '14px', fontWeight: 'bold', fill: '#059669' }} />
-                </Bar>
-                <Bar 
-                  dataKey="delayed" 
-                  fill="#e11d48" 
-                  radius={[0, 4, 4, 0]} 
-                  barSize={18}
-                  onClick={(data: any) => handleAgencyClick(data.agency || data.payload?.agency, 'delayed')}
-                  className="cursor-pointer"
-                >
-                  <LabelList dataKey="delayed" position="right" style={{ fontSize: '14px', fontWeight: 'bold', fill: '#e11d48' }} />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
           </div>
 
           {/* Project Statistics by Stage */}
@@ -1723,16 +1600,16 @@ function DashboardContent({
         if (selectedChildStep) {
           matches = p.currentStep === selectedChildStep;
         } else if (selectedDept) {
-          const agencyName = getStepAgency(p);
+          const agencyName = getStepAgency(p, INITIAL_PROCESSES);
           const projectDept = getStepDepartment(p);
           matches = agencyName === selectedAgency?.name && (projectDept === selectedDept.name || p.currentDepartment === selectedDept.name || p.location.includes(selectedDept.name));
         } else if (selectedAgency) {
           if (selectedAgency.id === 'no-investor-stat') {
             matches = p.investor === 'Chưa có chủ đầu tư';
           } else if (selectedAgency.id === 'investor-stat') {
-            matches = getStepAgency(p) === 'Chủ đầu tư';
+            matches = getStepAgency(p, INITIAL_PROCESSES) === 'Chủ đầu tư';
           } else {
-            matches = getStepAgency(p) === selectedAgency?.name;
+            matches = getStepAgency(p, INITIAL_PROCESSES) === selectedAgency?.name;
           }
         }
         
@@ -1811,7 +1688,7 @@ function DashboardContent({
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-bold text-slate-400 uppercase tracking-tighter">
                     <span className="text-blue-600">{info.activePhase.name}</span>
                     <span className="text-slate-300">•</span>
-                    <span>{getStepAgency(p)}</span>
+                    <span>{getStepAgency(p, INITIAL_PROCESSES)}</span>
                     <span className="text-slate-300">•</span>
                     <span className={`font-bold ${info.status === 'delayed' ? 'text-rose-600' : 'text-emerald-600'}`}>
                       {formatDate(info.planNnStr || p.deadline)}
@@ -1903,7 +1780,7 @@ function DashboardContent({
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-bold text-slate-400 uppercase tracking-tighter">
                    <span className="text-blue-600">{info.activePhase.name}</span>
                    <span className="text-slate-300">•</span>
-                   <span>{getStepAgency(p)}</span>
+                   <span>{getStepAgency(p, INITIAL_PROCESSES)}</span>
                    <span className="text-slate-300">•</span>
                    <span className={`font-bold ${info.status === 'delayed' ? 'text-rose-600' : 'text-emerald-600'}`}>
                      {formatDate(info.planNnStr || p.deadline)}
@@ -2130,7 +2007,7 @@ function DashboardContent({
                    <span>Hoàn thành</span>
                  </div>
                  <div className="flex items-center gap-2 text-slate-600">
-                   <div className="w-3.5 h-3.5 bg-emerald-500 rounded-lg" />
+                   <div className="w-3.5 h-3.5 bg-amber-400 rounded-lg" />
                    <span>Đang thực hiện</span>
                  </div>
                  <div className="flex items-center gap-2 text-slate-600">
@@ -2241,13 +2118,14 @@ function DashboardContent({
                       
                       const getKHStyles = () => {
                         if (isDone) return 'bg-emerald-50 text-emerald-700 border-emerald-100';
-                        if (!startDateStr || startDateStr === '--' || startDateStr === '') return 'bg-slate-50 text-slate-400 border-slate-200';
-                        const planDate = parseDate(startDateStr);
-                        if (!planDate) return 'bg-slate-50 text-slate-400 border-slate-200';
-                        if (today > planDate) return 'bg-rose-50 text-rose-700 border-rose-100';
                         const activeIdx = PHASES.indexOf(activePhase);
-                        if (mIdx === activeIdx || mIdx === activeIdx + 1) return 'bg-emerald-50 text-emerald-700 border-emerald-100';
-                        return 'bg-slate-50 text-slate-400 border-slate-200';
+                        if (mIdx > activeIdx) return 'bg-slate-50 text-slate-400 border-slate-200';
+                        
+                        if (!startDateStr || startDateStr === '--' || startDateStr === '') return 'bg-amber-50 text-amber-600 border-amber-200';
+                        const planDate = parseDate(startDateStr);
+                        if (!planDate) return 'bg-amber-50 text-amber-600 border-amber-200';
+                        if (today > planDate) return 'bg-rose-50 text-rose-700 border-rose-100';
+                        return 'bg-amber-50 text-amber-600 border-amber-200';
                       };
 
                       return (
@@ -2292,7 +2170,7 @@ function DashboardContent({
                                </div>
                             ) : hasPlan ? (
                                <button onClick={() => handleOpenModal(phase)} className="absolute inset-x-2 inset-y-2 border border-dashed border-blue-300 bg-blue-50/50 rounded-md text-blue-500 text-[8px] font-bold hover:bg-blue-100 transition-colors uppercase">
-                                 + nhập TD
+                                 + nhập TT
                                </button>
                             ) : null}
                           </td>
@@ -2320,13 +2198,14 @@ function DashboardContent({
 
                           const getKHStyles = () => {
                             if (isDone) return 'bg-emerald-50 text-emerald-700 border-emerald-100';
-                            if (!endDateStr || endDateStr === '--' || endDateStr === '') return 'bg-slate-50 text-slate-400 border-slate-200';
-                            const planDate = parseDate(endDateStr);
-                            if (!planDate) return 'bg-slate-50 text-slate-400 border-slate-200';
-                            if (today > planDate) return 'bg-rose-50 text-rose-700 border-rose-100';
                             const activeIdx = PHASES.indexOf(activePhase);
-                            if (mIdx === activeIdx || mIdx === activeIdx + 1) return 'bg-emerald-50 text-emerald-700 border-emerald-100';
-                            return 'bg-slate-50 text-slate-400 border-slate-200';
+                            if (mIdx > activeIdx) return 'bg-slate-50 text-slate-400 border-slate-200';
+
+                            if (!endDateStr || endDateStr === '--' || endDateStr === '') return 'bg-amber-50 text-amber-600 border-amber-200';
+                            const planDate = parseDate(endDateStr);
+                            if (!planDate) return 'bg-amber-50 text-amber-600 border-amber-200';
+                            if (today > planDate) return 'bg-rose-50 text-rose-700 border-rose-100';
+                            return 'bg-amber-50 text-amber-600 border-amber-200';
                           };
 
                           return (
@@ -2346,7 +2225,7 @@ function DashboardContent({
                       </tr>
                       <tr className="h-10">
                         <td className="sticky left-[140px] bg-[#F8FAFC] px-1 py-1 border-r border-b border-slate-200 text-center z-20 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
-                          <span className="px-1.5 py-0.5 bg-blue-600 text-white text-[8px] font-black rounded uppercase">TD</span>
+                          <span className="px-1.5 py-0.5 bg-blue-600 text-white text-[8px] font-black rounded uppercase">TT</span>
                         </td>
                         {PHASES.map((phase) => {
                           const isOwnerAgency = phase.agency === agency.id;
@@ -2363,7 +2242,7 @@ function DashboardContent({
                                 </div>
                               ) : isOwnerAgency && hasPlan ? (
                                 <button onClick={() => handleOpenModal(phase)} className="absolute inset-x-2 inset-y-2 border border-dashed border-blue-300 bg-blue-50/50 rounded-md text-blue-500 text-[8px] font-bold hover:bg-blue-100 transition-colors uppercase">
-                                  + nhập TD
+                                  + nhập TT
                                 </button>
                               ) : null}
                             </td>
@@ -2395,7 +2274,7 @@ function DashboardContent({
                           <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1.5">
                             {activePhase 
                               ? AGENCIES.find(a => a.id === activePhase.agency)?.name 
-                              : (getStepAgency(selectedProject) || selectedProject.currentAgency)}
+                              : (getStepAgency(selectedProject, INITIAL_PROCESSES) || selectedProject.currentAgency)}
                           </p>
                        </div>
                        <div className="text-right shrink-0">
